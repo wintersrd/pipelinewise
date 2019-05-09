@@ -18,6 +18,7 @@ commands = [
   'run_tap',
   'discover_tap',
   'show_status',
+  'events',
   'test_tap_connection',
   'clear_crontab',
   'init_crontab',

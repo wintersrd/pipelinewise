@@ -120,8 +120,10 @@ def load_yaml(yaml_file, vault_secret=None):
     encryption is ideal to store passwords or encrypt the entire file
     with sensitive data if required.
     '''
-    secret_file = get_file_vault_secret(filename=vault_secret, loader=DataLoader())
-    secret_file.load()
+    secret_file = None
+    if vault_secret:
+        secret_file = get_file_vault_secret(filename=vault_secret, loader=DataLoader())
+        secret_file.load()
 
     vault = VaultLib()
     vault.secrets = [('default', secret_file)]

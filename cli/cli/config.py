@@ -15,6 +15,7 @@ class Config(object):
         self.config_dir = config_dir
         self.config_path = os.path.join(self.config_dir, "config.json")
 
+        self.pipelinewise = {}
         self.targets = []
 
 
@@ -34,11 +35,18 @@ class Config(object):
         taps = {}
 
         # YAML files must match one of the patterns:
+        #   pipelinewise.yml
         #   target_*.yml
         #   tap_*.yml        
         yamls = [f for f in os.listdir(yaml_dir) if os.path.isfile(os.path.join(yaml_dir, f)) and f.endswith(".yml")]
+        pipelinewise_yaml = next((y for y in yamls if y == "pipelinewise.yml"), None)
         target_yamls = list(filter(lambda y: y.startswith("target_"), yamls))
         tap_yamls = list(filter(lambda y: y.startswith("tap_"), yamls))
+
+        # Load main pipeline config
+        if pipelinewise_yaml:
+            config.logger.info("LOADING PIPELINWISE YAML: {}".format(os.path.join(yaml_dir, pipelinewise_yaml)))
+            config.pipelinewise = utils.load_yaml(os.path.join(yaml_dir, pipelinewise_yaml))
 
         # Load every target yaml into targets dictionary        
         for yaml_file in target_yamls:
@@ -163,7 +171,8 @@ class Config(object):
                 "taps": taps
             })
         main_config = {
-            "targets": targets
+            "targets": targets,
+            "events": self.pipelinewise.get('events', {})
         }
 
         # Save to JSON

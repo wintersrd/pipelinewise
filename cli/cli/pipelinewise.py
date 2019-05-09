@@ -255,6 +255,12 @@ class PipelineWise(object):
             'transformation': os.path.join(connector_dir, 'transformation.json'),
             'selection': os.path.join(connector_dir, 'selection.json'),
         }
+
+    def get_events(self):
+        self.logger.debug('Getting events from {}'.format(self.config_path))
+        self.load_config()
+
+        return self.config.get('events', {})
         
     def get_targets(self):
         self.logger.debug('Getting targets from {}'.format(self.config_path))
@@ -632,6 +638,19 @@ class PipelineWise(object):
                     tap.get('status', {}).get('lastTimestamp', '<Unknown>'),
                     tap.get('status', {}).get('lastStatus', '<Unknown>')
                 ])
+
+        print(tabulate(tab_body, headers=tab_headers, tablefmt="simple"))
+
+    def events(self):
+        events = self.get_events()
+
+        tab_headers = ['Trigger', 'Action']
+        tab_body = []
+        for event, action in events.items():
+            tab_body.append([
+                event,
+                action
+            ])
 
         print(tabulate(tab_body, headers=tab_headers, tablefmt="simple"))
 

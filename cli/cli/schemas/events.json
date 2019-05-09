@@ -1,0 +1,27 @@
+{
+  "definitions": {
+    "event_action": {
+      "type": "object",
+      "properties":{
+        "run_command": { "type": "string" }
+      },
+      "additionalProperties": false
+    },
+    "event_actions": {
+      "type": "array",
+      "items": { "$ref": "#/definitions/event_action" }
+    }
+  },
+
+  "events": {
+    "type": "object",
+    "properties": {
+      "on_schema_created": { "$ref": "#/definitions/event_actions" },
+      "on_table_created": { "$ref": "#/definitions/event_actions" },
+      "on_permissions_granted": { "$ref": "#/definitions/event_actions" },
+      "on_success": { "$ref": "#/definitions/event_actions" },
+      "on_error": { "$ref": "#/definitions/event_actions" }
+    },
+    "additionalProperties": false
+  }
+}
