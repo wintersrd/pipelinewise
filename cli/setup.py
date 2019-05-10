@@ -17,7 +17,8 @@ setup(name='cli',
         'PyYAML==5.1.0',
         'jsonschema==3.0.1',
         'ansible==2.7.10',
-        'joblib==0.13.2'
+        'joblib==0.13.2',
+        'Events==0.3'
     ],
     entry_points='''
         [console_scripts]

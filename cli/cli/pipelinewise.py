@@ -15,6 +15,7 @@ from joblib import Parallel, delayed, parallel_backend
 
 from . import utils
 from .config import Config
+from .events import Events
 
 
 class PipelineWise(object):
@@ -63,6 +64,13 @@ class PipelineWise(object):
         self.pipelinewise_bin = os.path.join(self.venv_dir, "cli", "bin", "pipelinewise")
         self.config_path = os.path.join(self.config_dir, "config.json")
         self.load_config()
+
+        # Initialising eveng handlers
+        #
+        # To fire the event put the following line into the place where you
+        # want to call the event. For example to fire on_run_tap_success:
+        #       self.pipelinewise_events.on_run_tap_success(target_id, tap_id)
+        self.pipelinewise_events = Events(self.config.get('events', {}))
 
         if args.tap != '*':
             self.tap = self.get_tap(args.target, args.tap)

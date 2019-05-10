@@ -47,6 +47,7 @@ class Config(object):
         if pipelinewise_yaml:
             config.logger.info("LOADING PIPELINWISE YAML: {}".format(os.path.join(yaml_dir, pipelinewise_yaml)))
             config.pipelinewise = utils.load_yaml(os.path.join(yaml_dir, pipelinewise_yaml))
+            utils.validate(instance=config.pipelinewise, schema=utils.load_schema("pipelinewise"))
 
         # Load every target yaml into targets dictionary        
         for yaml_file in target_yamls:
