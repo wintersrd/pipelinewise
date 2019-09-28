@@ -476,10 +476,9 @@ def run_command(command, log_file=False):
                 # Update vs Insert per row
                 if "SNOWFLAKE - Merge into" in decoded_line:
                     try:
-                        table, metrics = decoded_line.split("SNOWFLAKE - Merge into ")[1].split(":")
-                        table, schema = table.split(".")
-                        metrics = json.loads(metrics.strip())[0]
-                        logger.info(table, schema, metrics)
+                        table, metrics = decoded_line.split("SNOWFLAKE - Merge into ")[1].split("[")
+                        schema, table = table.split(":")[0].split(".")
+                        metrics = json.loads(metrics.replace("'", '"')[:-1])
                         collector.incr(
                             metric_insert,
                             metrics["number of rows inserted"],
