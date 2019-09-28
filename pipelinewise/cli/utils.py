@@ -461,6 +461,7 @@ def run_command(command, log_file=False):
                     logger.info(decoded_line)
                 if "record_count" in decoded_line:
                     metric_dict = "{" + decoded_line.split("{")[1].strip()
+                    logger.info(metric_dict)
                     try:
                         metric_dict = json.loads(metric_dict)
                         tags = [f"{k}:{v}" for k, v in metric_dict["tags"].items()]
