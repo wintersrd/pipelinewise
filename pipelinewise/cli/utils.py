@@ -28,13 +28,15 @@ from ansible.utils.unsafe_proxy import AnsibleUnsafe
 from . import tap_properties
 
 logger = LoggerFactory.get_logger(__name__)
-collector = get_instance(tags=["data-team"])
+pull_collector = get_instance(tags=["data-team"])
+update_collector = get_instance(tags=["data-team"])
+insert_collector = get_instance(tags=["data-team"])
 metric_pull = f"ds.pipelinewise.records.pulled"
 metric_insert = f"ds.pipelinewise.records.inserted"
 metric_update = f"ds.pipelinewise.records.updated"
-collector.register_metrics(metric_insert)
-collector.register_metrics(metric_pull)
-collector.register_metrics(metric_update)
+insert_collector.register_metrics(metric_insert)
+pull_collector.register_metrics(metric_pull)
+update_collector.register_metrics(metric_update)
 
 
 class AnsibleJSONEncoder(json.JSONEncoder):
@@ -469,7 +471,7 @@ def run_command(command, log_file=False):
                     try:
                         metric_dict = json.loads(metric_dict)
                         tags = [f"{k}:{v}" for k, v in metric_dict["tags"].items()]
-                        collector.incr(metric_pull, metric_dict["value"], tags=tags)
+                        pull_collector.incr(metric_pull, metric_dict["value"], tags=tags)
                         logger.info(f" logged to Datadog")
                     except:
                         pass
@@ -479,12 +481,12 @@ def run_command(command, log_file=False):
                         table, metrics = decoded_line.split("SNOWFLAKE - Merge into ")[1].split("[")
                         schema, table = table.split(":")[0].split(".")
                         metrics = json.loads(metrics.replace("'", '"')[:-1])
-                        collector.incr(
+                        insert_collector.incr(
                             metric_insert,
                             metrics["number of rows inserted"],
                             tags=[f"table: {table}", "database: tripactions"],
                         )
-                        collector.incr(
+                        update_collector.incr(
                             metric_update,
                             metrics["number of rows updated"],
                             tags=[f"table: {table}", "database: tripactions"],
