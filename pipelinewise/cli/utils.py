@@ -460,7 +460,7 @@ def run_command(command, log_file=False):
                 if "key" not in decoded_line:
                     logger.info(decoded_line)
                 if "record_count" in decoded_line:
-                    metric_dict = "{" + decoded_line.split("{")[1].strip()
+                    metric_dict = decoded_line.split("METRIC: ")[1].strip()
                     logger.info(metric_dict)
                     try:
                         metric_dict = json.loads(metric_dict)
