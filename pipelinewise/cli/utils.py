@@ -460,11 +460,12 @@ def run_command(command, log_file=False):
                 if "key" not in decoded_line:
                     logger.info(decoded_line)
                 if "record_count" in decoded_line:
-                    metric_dict = "{" + decoded_line.split("{")[1].trim()
+                    metric_dict = "{" + decoded_line.split("{")[1].strip()
                     try:
                         metric_dict = json.loads(metric_dict)
                         tags = [f"{k}:{v}" for k, v in metric_dict["tags"].items()]
                         collector.incr(metric_insert, metric_dict["value"], tags=tags)
+                        logger.info(f" logged to Datadog")
                     except:
                         pass
                 f.write(decoded_line)
