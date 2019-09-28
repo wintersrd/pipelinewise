@@ -29,8 +29,12 @@ from . import tap_properties
 
 logger = LoggerFactory.get_logger(__name__)
 collector = get_instance(tags=["data-team"])
+metric_pull = f"ds.pipelinewise.records.pulled"
 metric_insert = f"ds.pipelinewise.records.inserted"
+metric_update = f"ds.pipelinewise.records.updated"
 collector.register_metrics(metric_insert)
+collector.register_metrics(metric_pull)
+collector.register_metrics(metric_update)
 
 
 class AnsibleJSONEncoder(json.JSONEncoder):
@@ -459,13 +463,33 @@ def run_command(command, log_file=False):
                 stdout += decoded_line
                 if "key" not in decoded_line:
                     logger.info(decoded_line)
+                # Captured extracted count
                 if "record_count" in decoded_line:
                     metric_dict = decoded_line.split("METRIC: ")[1].strip()
-                    logger.info(metric_dict)
                     try:
                         metric_dict = json.loads(metric_dict)
                         tags = [f"{k}:{v}" for k, v in metric_dict["tags"].items()]
-                        collector.incr(metric_insert, metric_dict["value"], tags=tags)
+                        collector.incr(metric_pull, metric_dict["value"], tags=tags)
+                        logger.info(f" logged to Datadog")
+                    except:
+                        pass
+                # Update vs Insert per row
+                if "SNOWFLAKE - Merge into" in decoded_line:
+                    try:
+                        table, metrics = decoded_line.split("SNOWFLAKE - Merge into ")[1].split(":")
+                        table, schema = table.split(".")
+                        metrics = json.loads(metrics.strip())[0]
+                        logger.info(table, schema, metrics)
+                        collector.incr(
+                            metric_insert,
+                            metrics["number of rows inserted"],
+                            tags=[f"table: {table}", "database: tripactions"],
+                        )
+                        collector.incr(
+                            metric_update,
+                            metrics["number of rows updated"],
+                            tags=[f"table: {table}", "database: tripactions"],
+                        )
                         logger.info(f" logged to Datadog")
                     except:
                         pass
