@@ -484,12 +484,12 @@ def run_command(command, log_file=False):
                         insert_collector.incr(
                             metric_insert,
                             metrics["number of rows inserted"],
-                            tags=[f"table: {table}", "database: tripactions"],
+                            tags=[f"table:{table}", "database:tripactions"],
                         )
                         update_collector.incr(
                             metric_update,
                             metrics["number of rows updated"],
-                            tags=[f"table: {table}", "database: tripactions"],
+                            tags=[f"table:{table}", "database:tripactions"],
                         )
                         logger.info(f" logged to Datadog")
                     except:
