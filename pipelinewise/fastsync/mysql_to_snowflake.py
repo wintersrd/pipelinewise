@@ -13,60 +13,57 @@ from .commons.target_snowflake import FastSyncTargetSnowflake
 
 
 REQUIRED_CONFIG_KEYS = {
-    'tap': [
-        'host',
-        'port',
-        'user',
-        'password'
+    "tap": ["host", "port", "user", "password"],
+    "target": [
+        "account",
+        "dbname",
+        "user",
+        "password",
+        "warehouse",
+        "aws_access_key_id",
+        "aws_secret_access_key",
+        "s3_bucket",
+        "stage",
+        "file_format",
     ],
-    'target': [
-        'account',
-        'dbname',
-        'user',
-        'password',
-        'warehouse',
-        'aws_access_key_id',
-        'aws_secret_access_key',
-        's3_bucket',
-        'stage',
-        'file_format'
-    ]
 }
 
 lock = multiprocessing.Lock()
 
 
-def tap_type_to_target_type(mysql_type, mysql_column_type):
+def tap_type_to_target_type(col_name, mysql_type, mysql_column_type):
     """Data type mapping from MySQL to Snowflake"""
+    if "json" in col_name.lower():
+        return "VARIANT"
     return {
-        'char':'VARCHAR',
-        'varchar':'VARCHAR',
-        'binary':'VARCHAR',
-        'varbinary':'VARCHAR',
-        'blob':'VARCHAR',
-        'tinyblob':'VARCHAR',
-        'mediumblob':'VARCHAR',
-        'longblob':'VARCHAR',
-        'geometry':'VARCHAR',
-        'text':'VARCHAR',
-        'tinytext':'VARCHAR',
-        'mediumtext':'VARCHAR',
-        'longtext':'VARCHAR',
-        'enum':'VARCHAR',
-        'int':'NUMBER',
-        'tinyint':'BOOLEAN' if mysql_column_type == 'tinyint(1)' else 'NUMBER',
-        'smallint':'NUMBER',
-        'bigint':'NUMBER',
-        'bit':'BOOLEAN',
-        'decimal':'FLOAT',
-        'double':'FLOAT',
-        'float':'FLOAT',
-        'bool':'BOOLEAN',
-        'boolean':'BOOLEAN',
-        'date':'TIMESTAMP_NTZ',
-        'datetime':'TIMESTAMP_NTZ',
-        'timestamp':'TIMESTAMP_NTZ',
-    }.get(mysql_type, 'VARCHAR')
+        "char": "VARCHAR",
+        "varchar": "VARCHAR",
+        "binary": "VARCHAR",
+        "varbinary": "VARCHAR",
+        "blob": "VARCHAR",
+        "tinyblob": "VARCHAR",
+        "mediumblob": "VARCHAR",
+        "longblob": "VARCHAR",
+        "geometry": "VARCHAR",
+        "text": "VARCHAR",
+        "tinytext": "VARCHAR",
+        "mediumtext": "VARCHAR",
+        "longtext": "VARCHAR",
+        "enum": "VARCHAR",
+        "int": "NUMBER",
+        "tinyint": "BOOLEAN" if mysql_column_type == "tinyint(1)" else "NUMBER",
+        "smallint": "NUMBER",
+        "bigint": "NUMBER",
+        "bit": "BOOLEAN",
+        "decimal": "FLOAT",
+        "double": "FLOAT",
+        "float": "FLOAT",
+        "bool": "BOOLEAN",
+        "boolean": "BOOLEAN",
+        "date": "TIMESTAMP_NTZ",
+        "datetime": "TIMESTAMP_NTZ",
+        "timestamp": "TIMESTAMP_NTZ",
+    }.get(mysql_type, "VARCHAR")
 
 
 def sync_table(table):
@@ -75,7 +72,9 @@ def sync_table(table):
     snowflake = FastSyncTargetSnowflake(args.target, args.transform)
 
     try:
-        filename = "pipelinewise_fastsync_{}_{}.csv.gz".format(table, time.strftime("%Y%m%d-%H%M%S"))
+        filename = "pipelinewise_fastsync_{}_{}.csv.gz".format(
+            table, time.strftime("%Y%m%d-%H%M%S")
+        )
         filepath = os.path.join(args.export_dir, filename)
         target_schema = utils.get_target_schema(args.target, table)
 
@@ -98,7 +97,9 @@ def sync_table(table):
 
         # Creating temp table in Snowflake
         snowflake.create_schema(target_schema)
-        snowflake.create_table(target_schema, table, snowflake_columns, primary_key, is_temporary=True)
+        snowflake.create_table(
+            target_schema, table, snowflake_columns, primary_key, is_temporary=True
+        )
 
         # Load into Snowflake table
         snowflake.copy_to_table(s3_key, target_schema, table, is_temporary=True)
@@ -135,7 +136,8 @@ def main_impl():
     table_sync_excs = []
 
     # Log start info
-    utils.log("""
+    utils.log(
+        """
         -------------------------------------------------------
         STARTING SYNC
         -------------------------------------------------------
@@ -144,10 +146,9 @@ def main_impl():
             CPU cores                      : {}
         -------------------------------------------------------
         """.format(
-            args.tables,
-            len(args.tables),
-            cpu_cores
-        ))
+            args.tables, len(args.tables), cpu_cores
+        )
+    )
 
     # Start loading tables in parallel in spawning processes by
     # utilising all available CPU cores
@@ -160,7 +161,8 @@ def main_impl():
 
     # Log summary
     end_time = datetime.now()
-    utils.log("""
+    utils.log(
+        """
         -------------------------------------------------------
         SYNC FINISHED - SUMMARY
         -------------------------------------------------------
@@ -176,8 +178,9 @@ def main_impl():
             len(args.tables) - len(table_sync_excs),
             str(table_sync_excs),
             cpu_cores,
-            end_time  - start_time
-        ))
+            end_time - start_time,
+        )
+    )
     if len(table_sync_excs) > 0:
         sys.exit(1)
 

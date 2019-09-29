@@ -11,10 +11,11 @@ from . import utils
 class FastSyncTapMySql:
     def __init__(self, connection_config, tap_type_to_target_type):
         self.connection_config = connection_config
-        self.connection_config['charset'] = connection_config.get('charset', 'utf8')
-        self.connection_config['export_batch_rows'] = connection_config.get('export_batch_rows', 20000)
+        self.connection_config["charset"] = connection_config.get("charset", "utf8")
+        self.connection_config["export_batch_rows"] = connection_config.get(
+            "export_batch_rows", 20000
+        )
         self.tap_type_to_target_type = tap_type_to_target_type
-
 
     def open_connection(self):
         self.conn = pymysql.connect(
@@ -23,12 +24,14 @@ class FastSyncTapMySql:
             #
             # If bulk_sync_{host|port|user|password} values are not defined in the config then it's
             # using the normal credentials to connect
-            host = self.connection_config.get('bulk_sync_host', self.connection_config['host']),
-            port = int(self.connection_config.get('bulk_sync_port', self.connection_config['port'])),
-            user = self.connection_config.get('bulk_sync_user', self.connection_config['user']),
-            password = self.connection_config.get('bulk_sync_password', self.connection_config['password']),
-            charset = self.connection_config['charset'],
-            cursorclass = pymysql.cursors.DictCursor
+            host=self.connection_config.get("bulk_sync_host", self.connection_config["host"]),
+            port=int(self.connection_config.get("bulk_sync_port", self.connection_config["port"])),
+            user=self.connection_config.get("bulk_sync_user", self.connection_config["user"]),
+            password=self.connection_config.get(
+                "bulk_sync_password", self.connection_config["password"]
+            ),
+            charset=self.connection_config["charset"],
+            cursorclass=pymysql.cursors.DictCursor,
         )
         self.conn_unbuffered = pymysql.connect(
             # Fastsync is using bulk_sync_{host|port|user|password} values from the config by default
@@ -36,26 +39,23 @@ class FastSyncTapMySql:
             #
             # If bulk_sync_{host|port|user|password} values are not defined in the config then it's
             # using the normal credentials to connect
-            host = self.connection_config.get('bulk_sync_host', self.connection_config['host']),
-            port = int(self.connection_config.get('bulk_sync_port', self.connection_config['port'])),
-            user = self.connection_config.get('bulk_sync_user', self.connection_config['user']),
-            password = self.connection_config.get('bulk_sync_password', self.connection_config['password']),
-            charset = self.connection_config['charset'],
-            cursorclass = pymysql.cursors.SSCursor
+            host=self.connection_config.get("bulk_sync_host", self.connection_config["host"]),
+            port=int(self.connection_config.get("bulk_sync_port", self.connection_config["port"])),
+            user=self.connection_config.get("bulk_sync_user", self.connection_config["user"]),
+            password=self.connection_config.get(
+                "bulk_sync_password", self.connection_config["password"]
+            ),
+            charset=self.connection_config["charset"],
+            cursorclass=pymysql.cursors.SSCursor,
         )
-
 
     def close_connection(self):
         self.conn.close()
 
-
     def query(self, query, params=None, return_as_cursor=False):
         utils.log("MYSQL - Running query: {}".format(query))
         with self.conn as cur:
-            cur.execute(
-                query,
-                params
-            )
+            cur.execute(query, params)
 
             if return_as_cursor:
                 return cur
@@ -65,7 +65,6 @@ class FastSyncTapMySql:
             else:
                 return []
 
-
     def fetch_current_log_pos(self):
         result = self.query("SHOW MASTER STATUS")
         if len(result) == 0:
@@ -74,11 +73,10 @@ class FastSyncTapMySql:
             binlog_pos = result[0]
 
             return {
-                "log_file": binlog_pos.get('File'),
-                "log_pos": binlog_pos.get('Position'),
-                "version": binlog_pos.get('version', 1)
+                "log_file": binlog_pos.get("File"),
+                "log_pos": binlog_pos.get("Position"),
+                "version": binlog_pos.get("version", 1),
             }
-
 
     def fetch_current_incremental_key_pos(self, table, replication_key):
         result = self.query("SELECT MAX({}) AS key_value FROM {}".format(replication_key, table))
@@ -93,7 +91,7 @@ class FastSyncTapMySql:
                 key_value = mysql_key_value.isoformat()
 
             elif isinstance(mysql_key_value, datetime.date):
-                key_value = mysql_key_value.isoformat() + 'T00:00:00'
+                key_value = mysql_key_value.isoformat() + "T00:00:00"
 
             elif isinstance(mysql_key_value, decimal.Decimal):
                 key_value = float(mysql_key_value)
@@ -101,18 +99,16 @@ class FastSyncTapMySql:
             return {
                 "replication_key": replication_key,
                 "replication_key_value": key_value,
-                "version": 1
+                "version": 1,
             }
-
 
     def get_primary_key(self, table_name):
         sql = "SHOW KEYS FROM {} WHERE Key_name = 'PRIMARY'".format(table_name)
         pk = self.query(sql)
         if len(pk) > 0:
-            return pk[0].get('Column_name')
+            return pk[0].get("Column_name")
         else:
             return None
-
 
     def get_table_columns(self, table_name):
         table_dict = utils.tablename_to_dict(table_name)
@@ -143,23 +139,28 @@ class FastSyncTapMySql:
                         AND table_name = '{}') x
                 ORDER BY
                         ordinal_position
-            """.format(table_dict.get('schema_name'), table_dict.get('table_name'))
+            """.format(
+            table_dict.get("schema_name"), table_dict.get("table_name")
+        )
         return self.query(sql)
-
 
     def map_column_types_to_target(self, table_name):
         mysql_columns = self.get_table_columns(table_name)
-        mapped_columns = ["{} {}".format(pc.get('column_name'), self.tap_type_to_target_type(pc.get('data_type'), pc.get('column_type'))) for pc in mysql_columns]
+        mapped_columns = [
+            "{} {}".format(
+                pc.get("column_name"),
+                self.tap_type_to_target_type(
+                    pc.get("column_name"), pc.get("data_type"), pc.get("column_type")
+                ),
+            )
+            for pc in mysql_columns
+        ]
 
-        return {
-            "columns": mapped_columns,
-            "primary_key": self.get_primary_key(table_name)
-        }
-
+        return {"columns": mapped_columns, "primary_key": self.get_primary_key(table_name)}
 
     def copy_table(self, table_name, path):
         table_columns = self.get_table_columns(table_name)
-        column_safe_sql_values = [c.get('safe_sql_value') for c in table_columns]
+        column_safe_sql_values = [c.get("safe_sql_value") for c in table_columns]
 
         # If self.get_table_columns returns zero row then table not exist
         if len(column_safe_sql_values) == 0:
@@ -170,16 +171,15 @@ class FastSyncTapMySql:
         ,CONVERT_TZ( NOW(),@@session.time_zone,'+00:00') AS _SDC_BATCHED_AT
         ,null AS _SDC_DELETED_AT
         FROM {}
-        """.format(','.join(column_safe_sql_values), table_name)
-        export_batch_rows = self.connection_config['export_batch_rows']
+        """.format(
+            ",".join(column_safe_sql_values), table_name
+        )
+        export_batch_rows = self.connection_config["export_batch_rows"]
         exported_rows = 0
         with self.conn_unbuffered as cur:
             cur.execute(sql)
-            with gzip.open(path, 'wt') as gzfile:
-                writer = csv.writer(gzfile,
-                                    delimiter=',',
-                                    quotechar='"',
-                                    quoting=csv.QUOTE_MINIMAL)
+            with gzip.open(path, "wt") as gzfile:
+                writer = csv.writer(gzfile, delimiter=",", quotechar='"', quoting=csv.QUOTE_MINIMAL)
 
                 while True:
                     rows = cur.fetchmany(export_batch_rows)
