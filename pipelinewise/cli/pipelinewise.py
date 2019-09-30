@@ -664,7 +664,47 @@ class PipelineWise(object):
         print(tabulate(tab_body, headers=tab_headers, tablefmt="simple"))
         print("{} pipeline(s)".format(pipelines))
 
+    def reset_tap(self):
+        tap_id = self.tap["id"]
+        tap_type = self.tap["type"]
+        target_id = self.target["id"]
+        target_type = self.target['type']
+        log_dir = self.get_tap_log_dir(target_id, tap_id)
 
+        self.logger.info("Resetting {} tap in {} target".format(tap_id, target_id))
+
+        # Run only if tap enabled
+        if not self.tap.get("enabled", False):
+            self.logger.info("Tap {} is not enabled. Do nothing and exit normally.".format(self.tap["name"]))
+            sys.exit(0)
+
+        # Run only if not running
+        tap_status = self.detect_tap_status(target_id, tap_id)
+        if tap_status["currentStatus"] != "running":
+            self.logger.info("Tap is not currently running, nothing to reset")
+            sys.exit(0)
+        os.remove(utils.search_files(log_dir, patterns=['*.log.running'])[0])
+        self.logger.info("Tap log successfully removed")        
+
+    def clean_logs(self):
+        """
+        Removes all but the most recent logs, cleaning space but preserving last run success/failure
+        """
+        tap_id = self.tap["id"]
+        tap_type = self.tap["type"]
+        target_id = self.target["id"]
+        target_type = self.target['type']
+        log_dir = self.get_tap_log_dir(target_id, tap_id)
+
+        log_files = utils.search_files(log_dir, patterns=['*.log.success','*.log.failed'], sort=True)
+        if len(log_files) < 2:
+            self.logger.info("No logs to clean")
+            sys.exit(0)
+        for file in log_files[1:]:
+            os.remove(file)
+        self.logger.info("{} files removed".format(len(log_files[1:])))
+        sys.exit(0)
+    
     def run_tap_singer(self, tap_type, tap_config, tap_properties, tap_state, tap_transformation, target_config, log_file):
         """
         Generating and running piped shell command to sync tables using singer taps and targets
