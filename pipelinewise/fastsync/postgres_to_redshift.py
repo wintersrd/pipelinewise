@@ -13,22 +13,17 @@ from .commons.target_redshift import FastSyncTargetRedshift
 
 
 REQUIRED_CONFIG_KEYS = {
-    'tap': [
-        'host',
-        'port',
-        'user',
-        'password'
+    "tap": ["host", "port", "user", "password"],
+    "target": [
+        "host",
+        "port",
+        "user",
+        "password",
+        "dbname",
+        "aws_access_key_id",
+        "aws_secret_access_key",
+        "s3_bucket",
     ],
-    'target': [
-        'host',
-        'port',
-        'user',
-        'password',
-        'dbname',
-        'aws_access_key_id',
-        'aws_secret_access_key',
-        's3_bucket'
-    ]
 }
 
 DEFAULT_VARCHAR_LENGTH = 10000
@@ -41,37 +36,39 @@ lock = multiprocessing.Lock()
 def tap_type_to_target_type(pg_type):
     """Data type mapping from MySQL to Redshift"""
     return {
-        'char':'CHARACTER VARYING({})'.format(DEFAULT_VARCHAR_LENGTH),
-        'character':'CHARACTER VARYING({})'.format(DEFAULT_VARCHAR_LENGTH),
-        'varchar':'CHARACTER VARYING({})'.format(DEFAULT_VARCHAR_LENGTH),
-        'character varying':'CHARACTER VARYING({})'.format(DEFAULT_VARCHAR_LENGTH),
-        'text':'CHARACTER VARYING({})'.format(LONG_VARCHAR_LENGTH),
-        'bit': 'BOOLEAN',
-        'varbit':'NUMERIC NULL',
-        'bit varying':'NUMERIC NULL',
-        'smallint':'NUMERIC NULL',
-        'int':'NUMERIC NULL',
-        'integer':'NUMERIC NULL',
-        'bigint':'NUMERIC NULL',
-        'smallserial':'NUMERIC NULL',
-        'serial':'NUMERIC NULL',
-        'bigserial':'NUMERIC NULL',
-        'numeric':'FLOAT',
-        'double precision':'FLOAT',
-        'real':'FLOAT',
-        'bool':'BOOLEAN',
-        'boolean':'BOOLEAN',
-        'date':'TIMESTAMP WITHOUT TIME ZONE',
-        'timestamp':'TIMESTAMP WITHOUT TIME ZONE',
-        'timestamp without time zone':'TIMESTAMP WITHOUT TIME ZONE',
-        'timestamp with time zone':'TIMESTAMP WITH TIME ZONE',
-        'time':'CHARACTER VARYING({})'.format(SHORT_VARCHAR_LENGTH),
-        'time without time zone':'CHARACTER VARYING({})'.format(SHORT_VARCHAR_LENGTH),
-        'time with time zone':'CHARACTER VARYING({})'.format(SHORT_VARCHAR_LENGTH),
-        'ARRAY':'CHARACTER VARYING({})'.format(LONG_VARCHAR_LENGTH),  # This is all uppercase, because postgres stores it in this format in information_schema.columns.data_type
-        'json':'CHARACTER VARYING({})'.format(LONG_VARCHAR_LENGTH),
-        'jsonb':'CHARACTER VARYING({})'.format(LONG_VARCHAR_LENGTH),
-    }.get(pg_type, 'CHARACTER VARYING({})'.format(DEFAULT_VARCHAR_LENGTH))
+        "char": "CHARACTER VARYING({})".format(DEFAULT_VARCHAR_LENGTH),
+        "character": "CHARACTER VARYING({})".format(DEFAULT_VARCHAR_LENGTH),
+        "varchar": "CHARACTER VARYING({})".format(DEFAULT_VARCHAR_LENGTH),
+        "character varying": "CHARACTER VARYING({})".format(DEFAULT_VARCHAR_LENGTH),
+        "text": "CHARACTER VARYING({})".format(LONG_VARCHAR_LENGTH),
+        "bit": "BOOLEAN",
+        "varbit": "NUMERIC NULL",
+        "bit varying": "NUMERIC NULL",
+        "smallint": "NUMERIC NULL",
+        "int": "NUMERIC NULL",
+        "integer": "NUMERIC NULL",
+        "bigint": "NUMERIC NULL",
+        "smallserial": "NUMERIC NULL",
+        "serial": "NUMERIC NULL",
+        "bigserial": "NUMERIC NULL",
+        "numeric": "FLOAT",
+        "double precision": "FLOAT",
+        "real": "FLOAT",
+        "bool": "BOOLEAN",
+        "boolean": "BOOLEAN",
+        "date": "TIMESTAMP WITHOUT TIME ZONE",
+        "timestamp": "TIMESTAMP WITHOUT TIME ZONE",
+        "timestamp without time zone": "TIMESTAMP WITHOUT TIME ZONE",
+        "timestamp with time zone": "TIMESTAMP WITH TIME ZONE",
+        "time": "CHARACTER VARYING({})".format(SHORT_VARCHAR_LENGTH),
+        "time without time zone": "CHARACTER VARYING({})".format(SHORT_VARCHAR_LENGTH),
+        "time with time zone": "CHARACTER VARYING({})".format(SHORT_VARCHAR_LENGTH),
+        "ARRAY": "CHARACTER VARYING({})".format(
+            LONG_VARCHAR_LENGTH
+        ),  # This is all uppercase, because postgres stores it in this format in information_schema.columns.data_type
+        "json": "CHARACTER VARYING({})".format(LONG_VARCHAR_LENGTH),
+        "jsonb": "CHARACTER VARYING({})".format(LONG_VARCHAR_LENGTH),
+    }.get(pg_type, "CHARACTER VARYING({})".format(DEFAULT_VARCHAR_LENGTH))
 
 
 def sync_table(table):
@@ -81,7 +78,9 @@ def sync_table(table):
 
     try:
         dbname = args.tap.get("dbname")
-        filename = "pipelinewise_fastsync_{}_{}_{}.csv.gz".format(dbname, table, time.strftime("%Y%m%d-%H%M%S"))
+        filename = "pipelinewise_fastsync_{}_{}_{}.csv.gz".format(
+            dbname, table, time.strftime("%Y%m%d-%H%M%S")
+        )
         filepath = os.path.join(args.export_dir, filename)
         target_schema = utils.get_target_schema(args.target, table)
 
@@ -104,7 +103,9 @@ def sync_table(table):
 
         # Creating temp table in Redshift
         redshift.drop_table(target_schema, table, is_temporary=True)
-        redshift.create_table(target_schema, table, redshift_columns, primary_key, is_temporary=True)
+        redshift.create_table(
+            target_schema, table, redshift_columns, primary_key, is_temporary=True
+        )
 
         # Load into Redshift table
         redshift.copy_to_table(s3_key, target_schema, table, is_temporary=True)
@@ -140,7 +141,8 @@ def main_impl():
     table_sync_excs = []
 
     # Log start info
-    utils.log("""
+    utils.log(
+        """
         -------------------------------------------------------
         STARTING SYNC
         -------------------------------------------------------
@@ -149,10 +151,9 @@ def main_impl():
             CPU cores                      : {}
         -------------------------------------------------------
         """.format(
-            args.tables,
-            len(args.tables),
-            cpu_cores
-        ))
+            args.tables, len(args.tables), cpu_cores
+        )
+    )
 
     # Create target schemas sequentially, Redshift doesn't like it running in parallel
     redshift = FastSyncTargetRedshift(args.target, args.transform)
@@ -166,7 +167,8 @@ def main_impl():
 
     # Log summary
     end_time = datetime.now()
-    utils.log("""
+    utils.log(
+        """
         -------------------------------------------------------
         SYNC FINISHED - SUMMARY
         -------------------------------------------------------
@@ -182,8 +184,9 @@ def main_impl():
             len(args.tables) - len(table_sync_excs),
             str(table_sync_excs),
             cpu_cores,
-            end_time  - start_time
-        ))
+            end_time - start_time,
+        )
+    )
     if len(table_sync_excs) > 0:
         sys.exit(1)
 

@@ -13,24 +13,19 @@ from .commons.target_snowflake import FastSyncTargetSnowflake
 
 
 REQUIRED_CONFIG_KEYS = {
-    'tap': [
-        'host',
-        'port',
-        'user',
-        'password'
+    "tap": ["host", "port", "user", "password"],
+    "target": [
+        "account",
+        "dbname",
+        "user",
+        "password",
+        "warehouse",
+        "aws_access_key_id",
+        "aws_secret_access_key",
+        "s3_bucket",
+        "stage",
+        "file_format",
     ],
-    'target': [
-        'account',
-        'dbname',
-        'user',
-        'password',
-        'warehouse',
-        'aws_access_key_id',
-        'aws_secret_access_key',
-        's3_bucket',
-        'stage',
-        'file_format'
-    ]
 }
 
 lock = multiprocessing.Lock()
@@ -39,37 +34,37 @@ lock = multiprocessing.Lock()
 def tap_type_to_target_type(pg_type):
     """Data type mapping from Postgres to Snowflake"""
     return {
-        'char':'VARCHAR',
-        'character':'VARCHAR',
-        'varchar':'VARCHAR',
-        'character varying':'VARCHAR',
-        'text':'TEXT',
-        'bit': 'BOOLEAN',
-        'varbit':'NUMBER',
-        'bit varying':'NUMBER',
-        'smallint':'NUMBER',
-        'int':'NUMBER',
-        'integer':'NUMBER',
-        'bigint':'NUMBER',
-        'smallserial':'NUMBER',
-        'serial':'NUMBER',
-        'bigserial':'NUMBER',
-        'numeric':'FLOAT',
-        'double precision':'FLOAT',
-        'real':'FLOAT',
-        'bool':'BOOLEAN',
-        'boolean':'BOOLEAN',
-        'date':'TIMESTAMP_NTZ',
-        'timestamp':'TIMESTAMP_NTZ',
-        'timestamp without time zone':'TIMESTAMP_NTZ',
-        'timestamp with time zone':'TIMESTAMP_TZ',
-        'time':'TIME',
-        'time without time zone':'TIME',
-        'time with time zone':'TIME',
-        'ARRAY':'VARIANT',  # This is all uppercase, because postgres stores it in this format in information_schema.columns.data_type
-        'json':'VARIANT',
-        'jsonb':'VARIANT'
-    }.get(pg_type, 'VARCHAR')
+        "char": "VARCHAR",
+        "character": "VARCHAR",
+        "varchar": "VARCHAR",
+        "character varying": "VARCHAR",
+        "text": "TEXT",
+        "bit": "BOOLEAN",
+        "varbit": "NUMBER",
+        "bit varying": "NUMBER",
+        "smallint": "NUMBER",
+        "int": "NUMBER",
+        "integer": "NUMBER",
+        "bigint": "NUMBER",
+        "smallserial": "NUMBER",
+        "serial": "NUMBER",
+        "bigserial": "NUMBER",
+        "numeric": "FLOAT",
+        "double precision": "FLOAT",
+        "real": "FLOAT",
+        "bool": "BOOLEAN",
+        "boolean": "BOOLEAN",
+        "date": "TIMESTAMP_NTZ",
+        "timestamp": "TIMESTAMP_NTZ",
+        "timestamp without time zone": "TIMESTAMP_NTZ",
+        "timestamp with time zone": "TIMESTAMP_TZ",
+        "time": "TIME",
+        "time without time zone": "TIME",
+        "time with time zone": "TIME",
+        "ARRAY": "VARIANT",  # This is all uppercase, because postgres stores it in this format in information_schema.columns.data_type
+        "json": "VARIANT",
+        "jsonb": "VARIANT",
+    }.get(pg_type, "VARCHAR")
 
 
 def sync_table(table):
@@ -79,7 +74,9 @@ def sync_table(table):
 
     try:
         dbname = args.tap.get("dbname")
-        filename = "pipelinewise_fastsync_{}_{}_{}.csv.gz".format(dbname, table, time.strftime("%Y%m%d-%H%M%S"))
+        filename = "pipelinewise_fastsync_{}_{}_{}.csv.gz".format(
+            dbname, table, time.strftime("%Y%m%d-%H%M%S")
+        )
         filepath = os.path.join(args.export_dir, filename)
         target_schema = utils.get_target_schema(args.target, table)
 
@@ -102,7 +99,9 @@ def sync_table(table):
 
         # Creating temp table in Snowflake
         snowflake.create_schema(target_schema)
-        snowflake.create_table(target_schema, table, snowflake_columns, primary_key, is_temporary=True)
+        snowflake.create_table(
+            target_schema, table, snowflake_columns, primary_key, is_temporary=True
+        )
 
         # Load into Snowflake table
         snowflake.copy_to_table(s3_key, target_schema, table, is_temporary=True)
@@ -139,7 +138,8 @@ def main_impl():
     table_sync_excs = []
 
     # Log start info
-    utils.log("""
+    utils.log(
+        """
         -------------------------------------------------------
         STARTING SYNC
         -------------------------------------------------------
@@ -148,10 +148,9 @@ def main_impl():
             CPU cores                      : {}
         -------------------------------------------------------
         """.format(
-            args.tables,
-            len(args.tables),
-            cpu_cores
-        ))
+            args.tables, len(args.tables), cpu_cores
+        )
+    )
 
     # Start loading tables in parallel in spawning processes by
     # utilising all available CPU cores
@@ -164,7 +163,8 @@ def main_impl():
 
     # Log summary
     end_time = datetime.now()
-    utils.log("""
+    utils.log(
+        """
         -------------------------------------------------------
         SYNC FINISHED - SUMMARY
         -------------------------------------------------------
@@ -180,8 +180,9 @@ def main_impl():
             len(args.tables) - len(table_sync_excs),
             str(table_sync_excs),
             cpu_cores,
-            end_time  - start_time
-        ))
+            end_time - start_time,
+        )
+    )
     if len(table_sync_excs) > 0:
         sys.exit(1)
 
@@ -192,4 +193,3 @@ def main():
     except Exception as exc:
         utils.log("CRITICAL: {}".format(exc))
         raise exc
-

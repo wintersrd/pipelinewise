@@ -14,16 +14,17 @@
 # import sys
 # sys.path.insert(0, os.path.abspath('.'))
 
+
 def setup(app):
-    app.add_stylesheet('css/custom.css')
+    app.add_stylesheet("css/custom.css")
 
 
 # -- Project information -----------------------------------------------------
 
-project = 'PipelineWise'
-copyright = '2019, TransferWise Ltd.'
-author = 'Peter Kosztolanyi'
-version = '0.10.3'
+project = "PipelineWise"
+copyright = "2019, TransferWise Ltd."
+author = "Peter Kosztolanyi"
+version = "0.10.3"
 
 
 # -- General configuration ---------------------------------------------------
@@ -31,20 +32,19 @@ version = '0.10.3'
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
-extensions = [
-]
+extensions = []
 
 # Add any paths that contain templates here, relative to this directory.
-templates_path = ['_templates']
+templates_path = ["_templates"]
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
 # This pattern also affects html_static_path and html_extra_path.
-exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
+exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
 
 # The document name of the “master” document, that is, the document that
 # contains the root toctree directive. Default is 'index'.
-master_doc = 'index'
+master_doc = "index"
 
 
 # -- Options for HTML output -------------------------------------------------
@@ -52,16 +52,16 @@ master_doc = 'index'
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 #
-html_theme = 'sphinx_rtd_theme'
+html_theme = "sphinx_rtd_theme"
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
-html_static_path = ['_static']
+html_static_path = ["_static"]
 
-html_favicon = 'img/pipelinewise.png'
+html_favicon = "img/pipelinewise.png"
 
 html_theme_options = {
-    'canonical_url': "https://docs.ansible.com/ansible/latest/",
-    'collapse_navigation': "True"
+    "canonical_url": "https://docs.ansible.com/ansible/latest/",
+    "collapse_navigation": "True",
 }

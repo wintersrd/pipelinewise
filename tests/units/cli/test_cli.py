@@ -7,21 +7,21 @@ from pipelinewise.cli.pipelinewise import PipelineWise
 
 from cli_args import CliArgs
 
-CONFIG_DIR="{}/resources/sample_json_config".format(os.path.dirname(__file__))
-VIRTUALENVS_DIR="./virtualenvs-dummy"
-TEST_PROJECT_NAME="test-project"
-TEST_PROJECT_DIR="{}/{}".format(os.getcwd(), TEST_PROJECT_NAME)
+CONFIG_DIR = "{}/resources/sample_json_config".format(os.path.dirname(__file__))
+VIRTUALENVS_DIR = "./virtualenvs-dummy"
+TEST_PROJECT_NAME = "test-project"
+TEST_PROJECT_DIR = "{}/{}".format(os.getcwd(), TEST_PROJECT_NAME)
 
 
 class TestCli(object):
     """
     Unit Tests for PipelineWise CLI executable
     """
+
     def setup_method(self):
         # Create CLI arguments
         self.args = CliArgs(log="coverage.log")
         self.pipelinewise = PipelineWise(self.args, CONFIG_DIR, VIRTUALENVS_DIR)
-
 
     def teardown_method(self):
         # Delete test directories
@@ -31,67 +31,61 @@ class TestCli(object):
         except:
             pass
 
-
     def test_target_dir(self):
         """Singer target connector config path must be relative to the project config dir"""
-        assert \
-            self.pipelinewise.get_target_dir("dummy-target") == \
-            "{}/dummy-target".format(CONFIG_DIR)
-
+        assert self.pipelinewise.get_target_dir("dummy-target") == "{}/dummy-target".format(
+            CONFIG_DIR
+        )
 
     def test_tap_dir(self):
         """Singer tap connector config path must be relative to the target connector config path"""
-        assert \
-            self.pipelinewise.get_tap_dir("dummy-target", "dummy-tap") == \
-            "{}/dummy-target/dummy-tap".format(CONFIG_DIR)
-
+        assert self.pipelinewise.get_tap_dir(
+            "dummy-target", "dummy-tap"
+        ) == "{}/dummy-target/dummy-tap".format(CONFIG_DIR)
 
     def test_tap_log_dir(self):
         """Singer tap log path must be relative to the tap connector config path"""
-        assert \
-            self.pipelinewise.get_tap_log_dir("dummy-target", "dummy-tap") == \
-            "{}/dummy-target/dummy-tap/log".format(CONFIG_DIR)
-
+        assert self.pipelinewise.get_tap_log_dir(
+            "dummy-target", "dummy-tap"
+        ) == "{}/dummy-target/dummy-tap/log".format(CONFIG_DIR)
 
     def test_connector_bin(self):
         """Singer connector binary must be at a certain location under PIPELINEWISE_HOME .virtualenvs dir"""
-        assert \
-            self.pipelinewise.get_connector_bin("dummy-type") == \
-            "{}/dummy-type/bin/dummy-type".format(VIRTUALENVS_DIR)
-
+        assert self.pipelinewise.get_connector_bin(
+            "dummy-type"
+        ) == "{}/dummy-type/bin/dummy-type".format(VIRTUALENVS_DIR)
 
     def test_connector_files(self):
         """Every singer connector must have a list of JSON files at certain locations"""
 
         # TODO: get_connector_files is duplicated in config.py and pipelinewise.py
         #       Refactor to use only one
-        assert \
-            self.pipelinewise.get_connector_files("/var/singer-connector") == \
-            {
-                'config': '/var/singer-connector/config.json',
-                'inheritable_config': '/var/singer-connector/inheritable_config.json',
-                'properties': '/var/singer-connector/properties.json',
-                'state': '/var/singer-connector/state.json',
-                'transformation': '/var/singer-connector/transformation.json',
-                'selection': '/var/singer-connector/selection.json'
-            }
-
+        assert self.pipelinewise.get_connector_files("/var/singer-connector") == {
+            "config": "/var/singer-connector/config.json",
+            "inheritable_config": "/var/singer-connector/inheritable_config.json",
+            "properties": "/var/singer-connector/properties.json",
+            "state": "/var/singer-connector/state.json",
+            "transformation": "/var/singer-connector/transformation.json",
+            "selection": "/var/singer-connector/selection.json",
+        }
 
     def test_not_existing_config_dir(self):
         """Test with not existing config dir"""
         # Create a new pipelinewise object pointing to a not existing config directory
-        pipelinewise_with_no_config = PipelineWise(self.args, "not-existing-config-dir", VIRTUALENVS_DIR)
+        pipelinewise_with_no_config = PipelineWise(
+            self.args, "not-existing-config-dir", VIRTUALENVS_DIR
+        )
 
         # It should return and empty config with empty list targets
         # TODO: Make this scenario to fail with error message of "config dir not exists"
         assert pipelinewise_with_no_config.config == {}
         assert pipelinewise_with_no_config.get_targets() == []
 
-
     def test_get_targets(self):
         """Targets should be loaded from JSON as is"""
-        assert self.pipelinewise.get_targets() == cli.utils.load_json("{}/config.json".format(CONFIG_DIR)).get("targets", [])
-
+        assert self.pipelinewise.get_targets() == cli.utils.load_json(
+            "{}/config.json".format(CONFIG_DIR)
+        ).get("targets", [])
 
     def test_get_target(self):
         """Selecting target by ID should append connector files"""
@@ -101,13 +95,16 @@ class TestCli(object):
         exp_target_two = next((item for item in targets if item["id"] == "target_two"), False)
 
         # Append the connector file paths to the expected targets
-        exp_target_one['files'] = self.pipelinewise.get_connector_files("{}/target_one".format(CONFIG_DIR))
-        exp_target_two['files'] = self.pipelinewise.get_connector_files("{}/target_two".format(CONFIG_DIR))
+        exp_target_one["files"] = self.pipelinewise.get_connector_files(
+            "{}/target_one".format(CONFIG_DIR)
+        )
+        exp_target_two["files"] = self.pipelinewise.get_connector_files(
+            "{}/target_two".format(CONFIG_DIR)
+        )
 
         # Getting target by ID should match to original JSON and should contains the connector files list
         assert self.pipelinewise.get_target("target_one") == exp_target_one
         assert self.pipelinewise.get_target("target_two") == exp_target_two
-
 
     def test_get_taps(self):
         """Selecting taps by target ID should append tap statuses"""
@@ -124,12 +121,13 @@ class TestCli(object):
 
         # Append the tap statuses to every tap in target_one
         exp_tap_three = target_two["taps"][0]
-        exp_tap_three["status"] = self.pipelinewise.detect_tap_status("target_two", exp_tap_three["id"])
+        exp_tap_three["status"] = self.pipelinewise.detect_tap_status(
+            "target_two", exp_tap_three["id"]
+        )
 
         # Tap statuses should be appended to every tap
         assert self.pipelinewise.get_taps("target_one") == [exp_tap_one, exp_tap_two]
         assert self.pipelinewise.get_taps("target_two") == [exp_tap_three]
-
 
     def test_get_tap(self):
         """Getting tap by ID should return status, connector and target props as well"""
@@ -140,12 +138,13 @@ class TestCli(object):
         # Append the tap status, files and target keys to the tap
         exp_tap_one = target_one["taps"][0]
         exp_tap_one["status"] = self.pipelinewise.detect_tap_status("target_one", exp_tap_one["id"])
-        exp_tap_one["files"] = self.pipelinewise.get_connector_files("{}/target_one/tap_one".format(CONFIG_DIR))
+        exp_tap_one["files"] = self.pipelinewise.get_connector_files(
+            "{}/target_one/tap_one".format(CONFIG_DIR)
+        )
         exp_tap_one["target"] = self.pipelinewise.get_target("target_one")
 
         # Getting tap by ID should match to original JSON and should contain the status, connector files and target props
         assert self.pipelinewise.get_tap("target_one", "tap_one") == exp_tap_one
-
 
     def test_get_not_existing_target(self):
         """Test getting not existing target"""
@@ -154,14 +153,12 @@ class TestCli(object):
         with pytest.raises(Exception):
             assert self.pipelinewise.get_target("not-existing-target") == {}
 
-
     def test_get_taps_from_not_existing_target(self):
         """Test getting taps from not existing target"""
 
         # Getting not existing from should raise exception
         with pytest.raises(Exception):
             assert self.pipelinewise.get_tap("not-existing-target", "not-existing-tap") == {}
-
 
     def test_get_not_existing_tap(self):
         """Test getting not existing tap from existing target"""
@@ -170,7 +167,6 @@ class TestCli(object):
         with pytest.raises(Exception):
             assert self.pipelinewise.get_tap("target_one", "not-existing-tap") == {}
 
-
     def test_create_filtered_tap_properties(self):
         """Test creating fastsync and singer specific properties file"""
         # TODO: review this completely
@@ -178,19 +174,24 @@ class TestCli(object):
             tap_properties_fastsync,
             fastsync_stream_ids,
             tap_properties_singer,
-            singer_stream_ids
+            singer_stream_ids,
         ) = self.pipelinewise.create_filtered_tap_properties(
             "target_snowflake",
             "tap_mysql",
-            "{}/resources/sample_json_config/target_one/tap_one/properties.json".format(os.path.dirname(__file__)),
-            "{}/resources/sample_json_config/target_one/tap_one/state.json".format(os.path.dirname(__file__)),
+            "{}/resources/sample_json_config/target_one/tap_one/properties.json".format(
+                os.path.dirname(__file__)
+            ),
+            "{}/resources/sample_json_config/target_one/tap_one/state.json".format(
+                os.path.dirname(__file__)
+            ),
             {
                 "selected": True,
                 "target_type": ["target-snowflake"],
                 "tap_type": ["tap-mysql", "tap-postgres"],
-                "initial_sync_required": True
+                "initial_sync_required": True,
             },
-            create_fallback = True)
+            create_fallback=True,
+        )
 
         # Fastsync and singer properties should be created
         assert os.path.isfile(tap_properties_fastsync)
@@ -201,67 +202,97 @@ class TestCli(object):
         os.remove(tap_properties_singer)
 
         # Fastsync and singer properties should be created
-        #assert fastsync_stream_ids == []
-        #assert singer_stream_ids == []
-
+        # assert fastsync_stream_ids == []
+        # assert singer_stream_ids == []
 
     def test_merge_empty_catalog(self):
         """Merging two empty singer schemas should be another empty"""
         # TODO: Check if pipelinewise.merge_schemas is required at all or not
         assert self.pipelinewise.merge_schemas({}, {}) == {}
 
-
     def test_merge_empty_stream_catalog(self):
         """Merging empty schemas should be empty"""
         # TODO: Check if pipelinewise.merge_schemas is required at all or not
         assert self.pipelinewise.merge_schemas({"streams": []}, {"streams": []}) == {"streams": []}
 
-
     def test_merge_same_catalog(self):
         """Test merging not empty schemas"""
         # TODO: Check if pipelinewise.merge_schemas is required at all or not
-        tap_one_catalog = cli.utils.load_json("{}/resources/sample_json_config/target_one/tap_one/properties.json".format(os.path.dirname(__file__)))
+        tap_one_catalog = cli.utils.load_json(
+            "{}/resources/sample_json_config/target_one/tap_one/properties.json".format(
+                os.path.dirname(__file__)
+            )
+        )
 
         assert self.pipelinewise.merge_schemas(tap_one_catalog, tap_one_catalog) == tap_one_catalog
-
 
     def test_merge_updated_catalog(self):
         """Test merging not empty schemas"""
         # TODO: Check if pipelinewise.merge_schemas is required at all or not
-        tap_one_catalog = cli.utils.load_json("{}/resources/sample_json_config/target_one/tap_one/properties.json".format(os.path.dirname(__file__)))
-        tap_one_updated_catalog = cli.utils.load_json("{}/resources/sample_json_config/target_one/tap_one/properties_updated.json".format(os.path.dirname(__file__)))
+        tap_one_catalog = cli.utils.load_json(
+            "{}/resources/sample_json_config/target_one/tap_one/properties.json".format(
+                os.path.dirname(__file__)
+            )
+        )
+        tap_one_updated_catalog = cli.utils.load_json(
+            "{}/resources/sample_json_config/target_one/tap_one/properties_updated.json".format(
+                os.path.dirname(__file__)
+            )
+        )
 
-        assert self.pipelinewise.merge_schemas(tap_one_catalog, tap_one_updated_catalog) == tap_one_catalog
-
+        assert (
+            self.pipelinewise.merge_schemas(tap_one_catalog, tap_one_updated_catalog)
+            == tap_one_catalog
+        )
 
     def test_make_default_selection(self):
         """Test if streams selected correctly in catalog JSON"""
-        tap_one_catalog = cli.utils.load_json("{}/resources/sample_json_config/target_one/tap_one/properties.json".format(os.path.dirname(__file__)))
-        tap_one_selection_file = "{}/resources/sample_json_config/target_one/tap_one/selection.json".format(os.path.dirname(__file__))
+        tap_one_catalog = cli.utils.load_json(
+            "{}/resources/sample_json_config/target_one/tap_one/properties.json".format(
+                os.path.dirname(__file__)
+            )
+        )
+        tap_one_selection_file = "{}/resources/sample_json_config/target_one/tap_one/selection.json".format(
+            os.path.dirname(__file__)
+        )
 
         # Update catalog selection
-        tap_one_with_selection = self.pipelinewise.make_default_selection(tap_one_catalog, tap_one_selection_file)
+        tap_one_with_selection = self.pipelinewise.make_default_selection(
+            tap_one_catalog, tap_one_selection_file
+        )
 
         # Table one has to be selected with LOG_BASED replication method
-        assert tap_one_with_selection['streams'][0]['metadata'][0]['metadata']['selected'] == True
-        assert tap_one_with_selection['streams'][0]['metadata'][0]['metadata']['replication-method'] == "LOG_BASED"
+        assert tap_one_with_selection["streams"][0]["metadata"][0]["metadata"]["selected"] == True
+        assert (
+            tap_one_with_selection["streams"][0]["metadata"][0]["metadata"]["replication-method"]
+            == "LOG_BASED"
+        )
 
         # Table two has to be selected with INCREMENTAL replication method
-        assert tap_one_with_selection['streams'][1]['metadata'][0]['metadata']['selected'] == True
-        assert tap_one_with_selection['streams'][1]['metadata'][0]['metadata']['replication-method'] == "INCREMENTAL"
-        assert tap_one_with_selection['streams'][1]['metadata'][0]['metadata']['replication-key'] == "id"
+        assert tap_one_with_selection["streams"][1]["metadata"][0]["metadata"]["selected"] == True
+        assert (
+            tap_one_with_selection["streams"][1]["metadata"][0]["metadata"]["replication-method"]
+            == "INCREMENTAL"
+        )
+        assert (
+            tap_one_with_selection["streams"][1]["metadata"][0]["metadata"]["replication-key"]
+            == "id"
+        )
 
         # Table three should not be selected
-        assert tap_one_with_selection['streams'][2]['metadata'][0]['metadata']['selected'] == False
-
+        assert tap_one_with_selection["streams"][2]["metadata"][0]["metadata"]["selected"] == False
 
     def test_create_consumable_target_config(self):
         """Test merging target config.json and inheritable_config.json"""
         target_config = "{}/resources/target-config.json".format(os.path.dirname(__file__))
-        tap_inheritable_config = "{}/resources/tap-inheritable-config.json".format(os.path.dirname(__file__))
+        tap_inheritable_config = "{}/resources/tap-inheritable-config.json".format(
+            os.path.dirname(__file__)
+        )
 
         # The merged JSON written into a temp file
-        temp_file = self.pipelinewise.create_consumable_target_config(target_config, tap_inheritable_config)
+        temp_file = self.pipelinewise.create_consumable_target_config(
+            target_config, tap_inheritable_config
+        )
         cons_targ_config = cli.utils.load_json(temp_file)
 
         # The merged object needs
@@ -281,24 +312,19 @@ class TestCli(object):
             "batch_size_rows": 5000,
             "data_flattening_max_level": 0,
             "default_target_schema": "jira_clear",
-            "default_target_schema_select_permissions": [
-                "grp_power"
-            ],
+            "default_target_schema_select_permissions": ["grp_power"],
             "hard_delete": True,
             "primary_key_required": True,
             "schema_mapping": {
                 "jira": {
                     "target_schema": "jira_clear",
-                    "target_schema_select_permissions": [
-                        "grp_power"
-                    ]
+                    "target_schema_select_permissions": ["grp_power"],
                 }
-            }
+            },
         }
 
         # Remove temp file with merged JSON
         os.remove(temp_file)
-
 
     def test_invalid_create_consumable_target_config(self):
         """Test merging invalid target config.json and inheritable_config.json"""
@@ -308,7 +334,6 @@ class TestCli(object):
         # Merging invalid or not existing JSONs should raise exception
         with pytest.raises(Exception):
             self.pipelinewise.create_consumable_target_config(target_config, tap_inheritable_config)
-
 
     def test_command_encrypt_string(self, capsys):
         """Test vault encryption command output"""
@@ -323,7 +348,6 @@ class TestCli(object):
         assert not stderr.strip()
         assert stdout.startswith("!vault |") and "$ANSIBLE_VAULT;" in stdout
 
-
     def test_command_init(self):
         """Test init command"""
         args = CliArgs(name=TEST_PROJECT_NAME)
@@ -332,8 +356,10 @@ class TestCli(object):
         # Init new project
         pipelinewise.init()
 
-        # The test project should contain every sample YAML file
-        for s in os.listdir("{}/../../../pipelinewise/cli/samples".format(os.path.dirname(__file__))):
+        #  The test project should contain every sample YAML file
+        for s in os.listdir(
+            "{}/../../../pipelinewise/cli/samples".format(os.path.dirname(__file__))
+        ):
             assert os.path.isfile(os.path.join(TEST_PROJECT_DIR, s))
 
         # Re-creating project should reaise exception of directory not empty
@@ -341,7 +367,6 @@ class TestCli(object):
             pipelinewise.init()
         assert pytest_wrapped_e.type == SystemExit
         assert pytest_wrapped_e.value.code == 1
-
 
     def test_command_status(self, capsys):
         """Test status command output"""
@@ -351,13 +376,16 @@ class TestCli(object):
         assert not stderr.strip()
 
         # Exact output match
-        assert stdout == """Tap ID     Tap Type      Target ID    Target Type       Enabled    Status          Last Sync    Last Sync Result
+        assert (
+            stdout
+            == """Tap ID     Tap Type      Target ID    Target Type       Enabled    Status          Last Sync    Last Sync Result
 ---------  ------------  -----------  ----------------  ---------  --------------  -----------  ------------------
 tap_one    tap-mysql     target_one   target-snowflake  True       ready                        unknown
 tap_two    tap-postgres  target_one   target-snowflake  True       ready                        unknown
 tap_three  tap-mysql     target_two   target-s3-csv     True       not-configured               unknown
 3 pipeline(s)
 """
+        )
 
     def test_command_discover_tap(self, capsys):
         """Test discover tap command"""
@@ -369,9 +397,10 @@ tap_three  tap-mysql     target_two   target-s3-csv     True       not-configure
         pipelinewise.discover_tap()
         stdout, stderr = capsys.readouterr()
 
-        exp_err_pattern = os.path.join(VIRTUALENVS_DIR, "/tap-mysql/bin/tap-mysql: No such file or directory")
+        exp_err_pattern = os.path.join(
+            VIRTUALENVS_DIR, "/tap-mysql/bin/tap-mysql: No such file or directory"
+        )
         assert exp_err_pattern in stdout or exp_err_pattern in stderr
-
 
     def _test_command_run_tap(self, capsys):
         """Test run tap command"""
@@ -385,7 +414,6 @@ tap_three  tap-mysql     target_two   target-s3-csv     True       not-configure
             pipelinewise.run_tap()
         assert pytest_wrapped_e.type == SystemExit
         assert pytest_wrapped_e.value.code == 1
-
 
     def test_command_sync_tables(self, capsys):
         """Test run tap command"""

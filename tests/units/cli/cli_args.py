@@ -1,9 +1,19 @@
-
-
-class CliArgs():
+class CliArgs:
     """Class to simulate argparse command line arguments required by PipelineWise class
     """
-    def __init__(self, target='*', tap='*', tables=None, dir='*', name='*', secret=None, string=None, log='*', debug=False):
+
+    def __init__(
+        self,
+        target="*",
+        tap="*",
+        tables=None,
+        dir="*",
+        name="*",
+        secret=None,
+        string=None,
+        log="*",
+        debug=False,
+    ):
         self.target = target
         self.tap = tap
         self.tables = tables
@@ -14,7 +24,6 @@ class CliArgs():
         self.log = log
         self.debug = debug
 
-
     # "log" Getters and setters
     @property
     def log(self):
@@ -23,7 +32,6 @@ class CliArgs():
     @log.setter
     def log(self, log):
         self.__log = log
-
 
     # "tap" Getters and setters
     @property
@@ -34,7 +42,6 @@ class CliArgs():
     def tap(self, tap):
         self.__tap = tap
 
-
     # "target" Getters and setters
     @property
     def target(self):
@@ -43,7 +50,6 @@ class CliArgs():
     @target.setter
     def target(self, target):
         self.__target = target
-
 
     # "dir" Getters and setters
     @property
@@ -54,7 +60,6 @@ class CliArgs():
     def dir(self, dir):
         self.__dir = dir
 
-
     # "tables" Getters and setters
     @property
     def tables(self):
@@ -64,7 +69,6 @@ class CliArgs():
     def tables(self, tables):
         self.__tables = tables
 
-
     # "secret" Getters and setters
     @property
     def secret(self):
@@ -73,4 +77,3 @@ class CliArgs():
     @secret.setter
     def secret(self, secret):
         self.__secret = secret
-

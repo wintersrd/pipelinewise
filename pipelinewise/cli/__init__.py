@@ -8,23 +8,27 @@ import argparse
 
 from .pipelinewise import PipelineWise
 
-__version__ = get_distribution('pipelinewise').version
-user_home = os.path.expanduser('~')
-config_dir = os.path.join(user_home, '.pipelinewise')
-pipelinewise_default_home = os.path.join(user_home, 'pipelinewise')
-pipelinewise_home = os.path.abspath(os.environ.setdefault("PIPELINEWISE_HOME", pipelinewise_default_home))
-venv_dir = os.path.join(pipelinewise_home, '.virtualenvs')
+__version__ = get_distribution("pipelinewise").version
+user_home = os.path.expanduser("~")
+config_dir = os.path.join(user_home, ".pipelinewise")
+pipelinewise_default_home = os.path.join(user_home, "pipelinewise")
+pipelinewise_home = os.path.abspath(
+    os.environ.setdefault("PIPELINEWISE_HOME", pipelinewise_default_home)
+)
+venv_dir = os.path.join(pipelinewise_home, ".virtualenvs")
 
 commands = [
-  'init',
-  'run_tap',
-  'discover_tap',
-  'status',
-  'test_tap_connection',
-  'sync_tables',
-  'import',
-  'import_config',  # This is for backward compatibility; use 'import' instead
-  'encrypt_string'
+    "init",
+    "run_tap",
+    "discover_tap",
+    "status",
+    "test_tap_connection",
+    "sync_tables",
+    "import",
+    "import_config",  # This is for backward compatibility; use 'import' instead
+    "encrypt_string",
+    "reset_tap",
+    "clean_logs",
 ]
 
 target_help = """Name of the target"""
@@ -37,42 +41,56 @@ version_help = """Displays the installed versions"""
 log_help = """File to log into"""
 debug_help = """Forces the debug mode with logging on stdout and log level debug."""
 
+
 def main():
-    '''Main entry point'''
-    parser = argparse.ArgumentParser(description='PipelineWise {} - Command Line Interface'.format(__version__), add_help=True)
-    parser.add_argument('command', type=str, choices=commands)
-    parser.add_argument('--target', type=str, default='*', help=target_help)
-    parser.add_argument('--tap', type=str, default='*', help=tap_help)
-    parser.add_argument('--tables', type=str, help=tables_help)
-    parser.add_argument('--dir', type=str, default='*', help=dir_help)
-    parser.add_argument('--name', type=str, default='*', help=name_help)
-    parser.add_argument('--secret', type=str, help=secret_help)
-    parser.add_argument('--string', type=str)
-    parser.add_argument('--version', action="version", help=version_help, version='PipelineWise {} - Command Line Interface'.format(__version__))
-    parser.add_argument('--log', type=str, default='*', help=log_help)
-    parser.add_argument('--debug', default=False, required=False, help=debug_help, action="store_true")
+    """Main entry point"""
+    parser = argparse.ArgumentParser(
+        description="PipelineWise {} - Command Line Interface".format(__version__), add_help=True
+    )
+    parser.add_argument("command", type=str, choices=commands)
+    parser.add_argument("--target", type=str, default="*", help=target_help)
+    parser.add_argument("--tap", type=str, default="*", help=tap_help)
+    parser.add_argument("--tables", type=str, help=tables_help)
+    parser.add_argument("--dir", type=str, default="*", help=dir_help)
+    parser.add_argument("--name", type=str, default="*", help=name_help)
+    parser.add_argument("--secret", type=str, help=secret_help)
+    parser.add_argument("--string", type=str)
+    parser.add_argument(
+        "--version",
+        action="version",
+        help=version_help,
+        version="PipelineWise {} - Command Line Interface".format(__version__),
+    )
+    parser.add_argument("--log", type=str, default="*", help=log_help)
+    parser.add_argument(
+        "--debug", default=False, required=False, help=debug_help, action="store_true"
+    )
 
     args = parser.parse_args()
 
     # Command specific argument validations
-    if args.command == 'init':
-        if args.name == '*':
+    if args.command == "init":
+        if args.name == "*":
             print("You must specify a project name using the argument --name")
             sys.exit(1)
 
-    if args.command == 'discover_tap' or args.command == 'test_tap_connection' or args.command == 'run_tap':
-        if args.tap == '*':
+    if (
+        args.command == "discover_tap"
+        or args.command == "test_tap_connection"
+        or args.command == "run_tap"
+    ):
+        if args.tap == "*":
             print("You must specify a source name using the argument --tap")
             sys.exit(1)
-        if args.target == '*':
+        if args.target == "*":
             print("You must specify a destination name using the argument --target")
             sys.exit(1)
 
-    if args.command == 'sync_tables':
-        if args.tap == '*':
+    if args.command == "sync_tables":
+        if args.tap == "*":
             print("You must specify a source name using the argument --tap")
             sys.exit(1)
-        if args.target == '*':
+        if args.target == "*":
             print("You must specify a destination name using the argument --target")
             sys.exit(1)
 
@@ -80,16 +98,18 @@ def main():
     #
     # import        : short CLI command name to import project
     # import_config : this is for backward compatibility; use 'import' instead from CLI
-    if args.command == 'import' or args.command == 'import_config':
-        if args.dir == '*':
-            print("You must specify a directory path with config YAML files using the argumant --dir")
+    if args.command == "import" or args.command == "import_config":
+        if args.dir == "*":
+            print(
+                "You must specify a directory path with config YAML files using the argumant --dir"
+            )
             sys.exit(1)
 
         # Every command argument is mapped to a python function with the same name, but 'import' is a
         # python keyword and can't be used as function name
-        args.command = 'import_project'
+        args.command = "import_project"
 
-    if args.command == 'encrypt_string':
+    if args.command == "encrypt_string":
         if not args.secret:
             print("You must specify a path to a file with vault secret using the argument --secret")
             sys.exit(1)
@@ -100,5 +120,6 @@ def main():
     pipelinewise = PipelineWise(args, config_dir, venv_dir)
     getattr(pipelinewise, args.command)()
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     main()

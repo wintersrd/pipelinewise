@@ -13,22 +13,17 @@ from .commons.target_redshift import FastSyncTargetRedshift
 
 
 REQUIRED_CONFIG_KEYS = {
-    'tap': [
-        'host',
-        'port',
-        'user',
-        'password'
+    "tap": ["host", "port", "user", "password"],
+    "target": [
+        "host",
+        "port",
+        "user",
+        "password",
+        "dbname",
+        "aws_access_key_id",
+        "aws_secret_access_key",
+        "s3_bucket",
     ],
-    'target': [
-        'host',
-        'port',
-        'user',
-        'password',
-        'dbname',
-        'aws_access_key_id',
-        'aws_secret_access_key',
-        's3_bucket'
-    ]
 }
 
 DEFAULT_VARCHAR_LENGTH = 10000
@@ -41,34 +36,34 @@ lock = multiprocessing.Lock()
 def tap_type_to_target_type(mysql_type, mysql_column_type):
     """Data type mapping from MySQL to Redshift"""
     return {
-        'char':'CHARACTER VARYING({})'.format(SHORT_VARCHAR_LENGTH),
-        'varchar':'CHARACTER VARYING({})'.format(SHORT_VARCHAR_LENGTH),
-        'binary':'CHARACTER VARYING({})'.format(LONG_VARCHAR_LENGTH),
-        'varbinary':'CHARACTER VARYING({})'.format(LONG_VARCHAR_LENGTH),
-        'blob':'CHARACTER VARYING({})'.format(LONG_VARCHAR_LENGTH),
-        'tinyblob':'CHARACTER VARYING({})'.format(LONG_VARCHAR_LENGTH),
-        'mediumblob':'CHARACTER VARYING({})'.format(LONG_VARCHAR_LENGTH),
-        'longblob':'CHARACTER VARYING({})'.format(LONG_VARCHAR_LENGTH),
-        'geometry':'CHARACTER VARYING({})'.format(DEFAULT_VARCHAR_LENGTH),
-        'text':'CHARACTER VARYING({})'.format(LONG_VARCHAR_LENGTH),
-        'tinytext':'CHARACTER VARYING({})'.format(SHORT_VARCHAR_LENGTH),
-        'mediumtext':'CHARACTER VARYING({})'.format(LONG_VARCHAR_LENGTH),
-        'longtext':'CHARACTER VARYING({})'.format(LONG_VARCHAR_LENGTH),
-        'enum':'CHARACTER VARYING({})'.format(DEFAULT_VARCHAR_LENGTH),
-        'int':'NUMERIC NULL',
-        'tinyint':'BOOLEAN' if mysql_column_type == 'tinyint(1)' else 'NUMERIC NULL',
-        'smallint':'NUMERIC NULL',
-        'bigint':'NUMERIC NULL',
-        'bit':'BOOLEAN',
-        'decimal':'FLOAT',
-        'double':'FLOAT',
-        'float':'FLOAT',
-        'bool':'BOOLEAN',
-        'boolean':'BOOLEAN',
-        'date':'TIMESTAMP WITHOUT TIME ZONE',
-        'datetime':'TIMESTAMP WITHOUT TIME ZONE',
-        'timestamp':'TIMESTAMP WITHOUT TIME ZONE',
-    }.get(mysql_type, 'CHARACTER VARYING({})'.format(DEFAULT_VARCHAR_LENGTH),)
+        "char": "CHARACTER VARYING({})".format(SHORT_VARCHAR_LENGTH),
+        "varchar": "CHARACTER VARYING({})".format(SHORT_VARCHAR_LENGTH),
+        "binary": "CHARACTER VARYING({})".format(LONG_VARCHAR_LENGTH),
+        "varbinary": "CHARACTER VARYING({})".format(LONG_VARCHAR_LENGTH),
+        "blob": "CHARACTER VARYING({})".format(LONG_VARCHAR_LENGTH),
+        "tinyblob": "CHARACTER VARYING({})".format(LONG_VARCHAR_LENGTH),
+        "mediumblob": "CHARACTER VARYING({})".format(LONG_VARCHAR_LENGTH),
+        "longblob": "CHARACTER VARYING({})".format(LONG_VARCHAR_LENGTH),
+        "geometry": "CHARACTER VARYING({})".format(DEFAULT_VARCHAR_LENGTH),
+        "text": "CHARACTER VARYING({})".format(LONG_VARCHAR_LENGTH),
+        "tinytext": "CHARACTER VARYING({})".format(SHORT_VARCHAR_LENGTH),
+        "mediumtext": "CHARACTER VARYING({})".format(LONG_VARCHAR_LENGTH),
+        "longtext": "CHARACTER VARYING({})".format(LONG_VARCHAR_LENGTH),
+        "enum": "CHARACTER VARYING({})".format(DEFAULT_VARCHAR_LENGTH),
+        "int": "NUMERIC NULL",
+        "tinyint": "BOOLEAN" if mysql_column_type == "tinyint(1)" else "NUMERIC NULL",
+        "smallint": "NUMERIC NULL",
+        "bigint": "NUMERIC NULL",
+        "bit": "BOOLEAN",
+        "decimal": "FLOAT",
+        "double": "FLOAT",
+        "float": "FLOAT",
+        "bool": "BOOLEAN",
+        "boolean": "BOOLEAN",
+        "date": "TIMESTAMP WITHOUT TIME ZONE",
+        "datetime": "TIMESTAMP WITHOUT TIME ZONE",
+        "timestamp": "TIMESTAMP WITHOUT TIME ZONE",
+    }.get(mysql_type, "CHARACTER VARYING({})".format(DEFAULT_VARCHAR_LENGTH))
 
 
 def sync_table(table):
@@ -77,7 +72,9 @@ def sync_table(table):
     redshift = FastSyncTargetRedshift(args.target, args.transform)
 
     try:
-        filename = "pipelinewise_fastsync_{}_{}.csv.gz".format(table, time.strftime("%Y%m%d-%H%M%S"))
+        filename = "pipelinewise_fastsync_{}_{}.csv.gz".format(
+            table, time.strftime("%Y%m%d-%H%M%S")
+        )
         filepath = os.path.join(args.export_dir, filename)
         target_schema = utils.get_target_schema(args.target, table)
 
@@ -100,7 +97,9 @@ def sync_table(table):
 
         # Creating temp table in Redshift
         redshift.drop_table(target_schema, table, is_temporary=True)
-        redshift.create_table(target_schema, table, redshift_columns, primary_key, is_temporary=True)
+        redshift.create_table(
+            target_schema, table, redshift_columns, primary_key, is_temporary=True
+        )
 
         # Load into Redshift table
         redshift.copy_to_table(s3_key, target_schema, table, is_temporary=True)
@@ -136,7 +135,8 @@ def main_impl():
     table_sync_excs = []
 
     # Log start info
-    utils.log("""
+    utils.log(
+        """
         -------------------------------------------------------
         STARTING SYNC
         -------------------------------------------------------
@@ -145,16 +145,15 @@ def main_impl():
             CPU cores                      : {}
         -------------------------------------------------------
         """.format(
-            args.tables,
-            len(args.tables),
-            cpu_cores
-        ))
+            args.tables, len(args.tables), cpu_cores
+        )
+    )
 
     # Create target schemas sequentially, Redshift doesn't like it running in parallel
     redshift = FastSyncTargetRedshift(args.target, args.transform)
     for target_schema in utils.get_target_schemas(args.target, args.tables):
         redshift.create_schema(target_schema)
-    
+
     # Start loading tables in parallel in spawning processes by
     # utilising all available CPU cores
     with multiprocessing.Pool(cpu_cores) as p:
@@ -162,7 +161,8 @@ def main_impl():
 
     # Log summary
     end_time = datetime.now()
-    utils.log("""
+    utils.log(
+        """
         -------------------------------------------------------
         SYNC FINISHED - SUMMARY
         -------------------------------------------------------
@@ -178,8 +178,9 @@ def main_impl():
             len(args.tables) - len(table_sync_excs),
             str(table_sync_excs),
             cpu_cores,
-            end_time  - start_time
-        ))
+            end_time - start_time,
+        )
+    )
     if len(table_sync_excs) > 0:
         sys.exit(1)
 
@@ -190,4 +191,3 @@ def main():
     except Exception as exc:
         utils.log("CRITICAL: {}".format(exc))
         raise exc
-

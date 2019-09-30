@@ -195,4 +195,3 @@ class FastSyncTapMySql:
                     # Write rows to file
                     for row in rows:
                         writer.writerow(row)
-
