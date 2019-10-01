@@ -833,7 +833,7 @@ class PipelineWise(object):
             self.logger.info("No logs to clean")
             sys.exit(0)
         for file in log_files[1:]:
-            os.remove(file)
+            os.remove(os.path.join(log_dir, file))
         self.logger.info("{} files removed".format(len(log_files[1:])))
         sys.exit(0)
 
