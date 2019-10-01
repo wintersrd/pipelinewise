@@ -816,7 +816,7 @@ class PipelineWise(object):
         os.remove(utils.search_files(log_dir, patterns=["*.log.running"])[0])
         self.logger.info("Tap log successfully removed")
 
-    def clean_logs(self):
+    def clean_logs(self, to_keep=2):
         """
         Removes all but the most recent logs, cleaning space but preserving last run success/failure
         """
@@ -829,10 +829,10 @@ class PipelineWise(object):
         log_files = utils.search_files(
             log_dir, patterns=["*.log.success", "*.log.failed"], sort=True
         )
-        if len(log_files) < 2:
+        if len(log_files) < to_keep:
             self.logger.info("No logs to clean")
             sys.exit(0)
-        for file in log_files[1:]:
+        for file in log_files[to_keep:]:
             os.remove(os.path.join(log_dir, file))
         self.logger.info("{} files removed".format(len(log_files[1:])))
         sys.exit(0)
