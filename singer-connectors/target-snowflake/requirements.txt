@@ -1,1 +1,2 @@
-pipelinewise-target-snowflake==1.0.8
+# pipelinewise-target-snowflake==1.0.8
+git+git://github.com/wintersrd/pipelinewise-target-snowflake.git
