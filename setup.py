@@ -30,7 +30,6 @@ setup(
         "psycopg2==2.8.2",
         "boto3==1.9.33",
         "snowflake-connector-python==2.0.1",
-        "asn1crypto==1.2.0"
     ],
     extras_require={
         "test": [
