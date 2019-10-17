@@ -1,2 +1,2 @@
-# tap-zendesk==1.4.6
-git+https://github.com/wintersrd/tap-zendesk.git
+tap-zendesk==1.4.6
+# git+https://github.com/wintersrd/tap-zendesk.git
