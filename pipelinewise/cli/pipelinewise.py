@@ -820,22 +820,20 @@ class PipelineWise(object):
         """
         Removes all but the most recent logs, cleaning space but preserving last run success/failure
         """
-        tap_id = self.tap["id"]
-        tap_type = self.tap["type"]
-        target_id = self.target["id"]
-        target_type = self.target["type"]
-        log_dir = self.get_tap_log_dir(target_id, tap_id)
-
-        log_files = utils.search_files(
-            log_dir, patterns=["*.log.success", "*.log.failed"], sort=True
-        )
-        if len(log_files) < to_keep:
-            self.logger.info("No logs to clean")
-            sys.exit(0)
-        for file in log_files[to_keep:]:
-            os.remove(os.path.join(log_dir, file))
-        self.logger.info("{} files removed".format(len(log_files[1:])))
-        sys.exit(0)
+        targets = self.get_targets()
+        for target in targets:
+            taps = self.get_taps(target["id"])
+            for tap in taps:
+                self.logger.info("Cleaning {}".format(tap["id"]))
+                log_dir = self.get_tap_log_dir(target["id"], tap["id"])
+                log_files = utils.search_files(
+                    log_dir, patterns=["*.log.success", "*.log.failed"], sort=True
+                )
+                if len(log_files) < to_keep:
+                    self.logger.info("No logs to clean")
+                for file in log_files[to_keep:]:
+                    os.remove(os.path.join(log_dir, file))
+                self.logger.info("{} files removed".format(len(log_files[1:])))
 
     def run_tap_singer(
         self,
