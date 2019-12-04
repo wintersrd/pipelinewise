@@ -18,12 +18,7 @@ class FastSyncTapMySql:
         self.tap_type_to_target_type = tap_type_to_target_type
 
     def open_connection(self):
-        self.conn = pymysql.connect(
-            # Fastsync is using bulk_sync_{host|port|user|password} values from the config by default
-            # to avoid making heavy load on the primary source database when syncing large tables
-            #
-            # If bulk_sync_{host|port|user|password} values are not defined in the config then it's
-            # using the normal credentials to connect
+        params = dict(
             host=self.connection_config.get("bulk_sync_host", self.connection_config["host"]),
             port=int(self.connection_config.get("bulk_sync_port", self.connection_config["port"])),
             user=self.connection_config.get("bulk_sync_user", self.connection_config["user"]),
@@ -31,7 +26,18 @@ class FastSyncTapMySql:
                 "bulk_sync_password", self.connection_config["password"]
             ),
             charset=self.connection_config["charset"],
-            cursorclass=pymysql.cursors.DictCursor,
+        )
+
+        if self.connection_config.get("ssl"):
+            params.update({"ssl": {"ssl": {"ca": "/var/lib/mysql/ca.pem"}}})
+
+        self.conn = pymysql.connect(
+            # Fastsync is using bulk_sync_{host|port|user|password} values from the config by default
+            # to avoid making heavy load on the primary source database when syncing large tables
+            #
+            # If bulk_sync_{host|port|user|password} values are not defined in the config then it's
+            # using the normal credentials to connect
+            **dict(cursorclass=pymysql.cursors.DictCursor, **params)
         )
         self.conn_unbuffered = pymysql.connect(
             # Fastsync is using bulk_sync_{host|port|user|password} values from the config by default
@@ -39,14 +45,7 @@ class FastSyncTapMySql:
             #
             # If bulk_sync_{host|port|user|password} values are not defined in the config then it's
             # using the normal credentials to connect
-            host=self.connection_config.get("bulk_sync_host", self.connection_config["host"]),
-            port=int(self.connection_config.get("bulk_sync_port", self.connection_config["port"])),
-            user=self.connection_config.get("bulk_sync_user", self.connection_config["user"]),
-            password=self.connection_config.get(
-                "bulk_sync_password", self.connection_config["password"]
-            ),
-            charset=self.connection_config["charset"],
-            cursorclass=pymysql.cursors.SSCursor,
+            **dict(cursorclass=pymysql.cursors.SSCursor, **params)
         )
 
     def close_connection(self):
