@@ -65,7 +65,6 @@ class PipelineWise(object):
         self.pipelinewise_bin = os.path.join(self.venv_dir, "cli", "bin", "pipelinewise")
         self.config_path = os.path.join(self.config_dir, "config.json")
         self.load_config()
-        # self.init_db()
 
         if args.tap != "*":
             self.tap = self.get_tap(args.target, args.tap)
@@ -76,23 +75,6 @@ class PipelineWise(object):
             self.target_bin = self.get_connector_bin(self.target["type"])
 
         self.tranform_field_bin = self.get_connector_bin("transform-field")
-
-    def init_db(self):
-        self.db_path = os.path.join(self.venv_dir, "track.db")
-        self.conn = sqlite3.connect(self.db_path)
-        self.run_query("""create table if not exists process_track
-            (process_id int,
-             tap varchar,
-             target varchar,
-             start_time datetime,
-             end_time datetime,
-             status varchar)""")
-
-    def run_query(self, query):
-        cursor = self.conn.cursor()
-        cursor.execute(query)
-        self.conn.commit()
-        return cursor.fetchall()
 
     def create_consumable_target_config(self, target_config, tap_inheritable_config):
         try:

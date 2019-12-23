@@ -29,7 +29,6 @@ setup(
         "idna==2.8",
         "PyMySQL==0.9.3",
         "psycopg2==2.8.4",
-        "pysqlite3==0.4.1",
         "boto3==1.10.44",
         "pytz==2018.4",
         "backoff==1.8.0",
