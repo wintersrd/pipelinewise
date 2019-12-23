@@ -1,16 +1,18 @@
 #!/usr/bin/env python3
 
-import os
-import shutil
-import tempfile
-import sys
-import logging
-import json
 import copy
-
+import json
+import logging
+import os
+import psutil
+import shutil
+import sys
+import tempfile
 from datetime import datetime
-from tabulate import tabulate
+
+# import pysqlite3
 from joblib import Parallel, delayed, parallel_backend
+from tabulate import tabulate
 
 from . import utils
 from .config import Config
@@ -63,6 +65,7 @@ class PipelineWise(object):
         self.pipelinewise_bin = os.path.join(self.venv_dir, "cli", "bin", "pipelinewise")
         self.config_path = os.path.join(self.config_dir, "config.json")
         self.load_config()
+        # self.init_db()
 
         if args.tap != "*":
             self.tap = self.get_tap(args.target, args.tap)
@@ -73,6 +76,23 @@ class PipelineWise(object):
             self.target_bin = self.get_connector_bin(self.target["type"])
 
         self.tranform_field_bin = self.get_connector_bin("transform-field")
+
+    def init_db(self):
+        self.db_path = os.path.join(self.venv_dir, "track.db")
+        self.conn = sqlite3.connect(self.db_path)
+        self.run_query("""create table if not exists process_track
+            (process_id int,
+             tap varchar,
+             target varchar,
+             start_time datetime,
+             end_time datetime,
+             status varchar)""")
+
+    def run_query(self, query):
+        cursor = self.conn.cursor()
+        cursor.execute(query)
+        self.conn.commit()
+        return cursor.fetchall()
 
     def create_consumable_target_config(self, target_config, tap_inheritable_config):
         try:
@@ -128,6 +148,7 @@ class PipelineWise(object):
             fallback_properties = copy.deepcopy(properties) if create_fallback else None
 
             # Foreach every stream (table) in the original properties
+            self.logger.info(tap_properties)
             for stream_idx, stream in enumerate(properties.get("streams", tap_properties)):
                 selected = False
                 replication_method = None
@@ -721,23 +742,33 @@ class PipelineWise(object):
         except Exception as exc:
             return "Cannot save file. {}".format(str(exc))
 
-    def detect_tap_status(self, target_id, tap_id):
+    def detect_tap_status(self, target_id, tap_id, set_pid=False):
         self.logger.debug("Detecting {} tap status in {} target".format(tap_id, target_id))
         tap_dir = self.get_tap_dir(target_id, tap_id)
         log_dir = self.get_tap_log_dir(target_id, tap_id)
         connector_files = self.get_connector_files(tap_dir)
-        status = {"currentStatus": "unknown", "lastStatus": "unknown", "lastTimestamp": None}
+        current_pid = os.getpid()
+        pid_path = os.path.join(tap_dir, "pid")
+        status = {"currentStatus": "unknown",
+                  "lastStatus": "unknown",
+                  "lastTimestamp": None,
+                  "pid": current_pid}
+        if os.path.exists(pid_path):
+            try:
+                executed_pid = int(open(pid_path, "r").readlines()[0])
+                if executed_pid in psutil.pids():
+                    status["currentStatus"] = "running"
+                    return status
+            except:
+                pass
+        if set_pid:
+            if os.path.exists(pid_path):
+                os.remove(pid_path)
+            open(pid_path, "w").write(str(current_pid))
 
         # Tap exists but configuration not completed
         if not os.path.isfile(connector_files["config"]):
             status["currentStatus"] = "not-configured"
-
-        # Tap exists and has log in running status
-        elif (
-            os.path.isdir(log_dir)
-            and len(utils.search_files(log_dir, patterns=["*.log.running"])) > 0
-        ):
-            status["currentStatus"] = "running"
 
         # Configured and not running
         else:
@@ -753,7 +784,6 @@ class PipelineWise(object):
                 log_attr = utils.extract_log_attributes(last_log_file)
                 status["lastStatus"] = log_attr["status"]
                 status["lastTimestamp"] = log_attr["timestamp"]
-
         return status
 
     def status(self):
@@ -856,9 +886,9 @@ class PipelineWise(object):
         tap_catalog_argument = utils.get_tap_property_by_tap_type(tap_type, "tap_catalog_argument")
 
         # Add state arugment if exists to extract data incrementally
-        tap_state_arg = ""
-        if os.path.isfile(tap_state):
-            tap_state_arg = "--state {}".format(tap_state)
+        if not os.path.isfile(tap_state):
+            open(tap_state, "w").write("{}")
+        tap_state_arg = "--state {}".format(tap_state)
 
         # Detect if transformation is needed
         has_transformation = False
@@ -882,7 +912,7 @@ class PipelineWise(object):
                     "> {}".format(new_tap_state),
                 )
             )
-
+            self.logger.info(command)
         # Run with transformation in the middle
         else:
             command = " ".join(
@@ -902,24 +932,17 @@ class PipelineWise(object):
 
         # Do not run if another instance is already running
         log_dir = os.path.dirname(log_file)
-        if (
-            os.path.isdir(log_dir)
-            and len(utils.search_files(log_dir, patterns=["*.log.running"])) > 0
-        ):
-            self.logger.info(
-                "Failed to run. Another instance of the same tap is already running. Log file detected in running status at {} ".format(
-                    log_dir
-                )
-            )
-            sys.exit(1)
-
         # Run command
         result = utils.run_command(command, log_file)
 
         # Save the new state file if created correctly
         if utils.is_json_file(new_tap_state):
+            self.logger.info("Writing new state file")
+            self.logger.info(open(new_tap_state, 'r').readlines())
             shutil.copyfile(new_tap_state, tap_state)
             os.remove(new_tap_state)
+        else:
+            self.logger.warning("Not a valid state record")
 
     def run_tap_fastsync(
         self,
@@ -956,17 +979,6 @@ class PipelineWise(object):
 
         # Do not run if another instance is already running
         log_dir = os.path.dirname(log_file)
-        if (
-            os.path.isdir(log_dir)
-            and len(utils.search_files(log_dir, patterns=["*.log.running"])) > 0
-        ):
-            self.logger.info(
-                "Failed to run. Another instance of the same tap is already running. Log file detected in running status at {} ".format(
-                    log_dir
-                )
-            )
-            sys.exit(1)
-
         # Run command
         result = utils.run_command(command, log_file)
 
@@ -1004,7 +1016,8 @@ class PipelineWise(object):
             sys.exit(0)
 
         # Run only if not running
-        tap_status = self.detect_tap_status(target_id, tap_id)
+        tap_status = self.detect_tap_status(target_id, tap_id, set_pid=True)
+        self.logger.info(tap_status)
         if tap_status["currentStatus"] == "running":
             self.logger.info(
                 "Tap {} is currently running. Do nothing and exit normally.".format(

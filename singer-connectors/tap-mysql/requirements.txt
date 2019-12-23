@@ -1,1 +1,2 @@
-pipelinewise-tap-mysql==1.0.6
+git+https://github.com/wintersrd/pipelinewise-tap-mysql.git
+# file:///opt/repositories/pipelinewise-tap-mysql

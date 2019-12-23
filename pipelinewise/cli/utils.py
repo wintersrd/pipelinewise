@@ -27,7 +27,11 @@ from ansible.utils.unsafe_proxy import AnsibleUnsafe
 
 from . import tap_properties
 
+
 logger = LoggerFactory.get_logger(__name__)
+if "DD_API_KEY" not in os.environ.keys():
+    logger.warning("No Datadog API key set, sending to the void")
+    os.environ["DD_API_KEY"] = "45fe2490cf421ffbdc2ccb4b010a6989"
 pull_collector = get_instance(tags=["data-team"])
 update_collector = get_instance(tags=["data-team"])
 insert_collector = get_instance(tags=["data-team"])
@@ -42,7 +46,7 @@ update_collector.register_metrics(metric_update)
 class AnsibleJSONEncoder(json.JSONEncoder):
     """
     Simple encoder class to deal with JSON encoding of Ansible internal types
-    
+
     This is required to convert YAML files with vault encrypted inline values to
     singer JSON configuration files
     """
@@ -114,7 +118,7 @@ def load_json(path):
 
 def save_json(data, path):
     """
-    Serializes and saves any data structure to JSON files 
+    Serializes and saves any data structure to JSON files
     """
     try:
         logger.debug("Saving JSON {}".format(path))
@@ -465,11 +469,15 @@ def run_command(command, log_file=False):
                 stdout += decoded_line
                 if "key" not in decoded_line:
                     logger.info(decoded_line)
+                if "http_request_duration" in decoded_line:
+                    continue
                 # Captured extracted count
                 if "record_count" in decoded_line:
                     metric_dict = decoded_line.split("METRIC: ")[1].strip()
                     try:
                         metric_dict = json.loads(metric_dict)
+                        if metric_dict["key"] == "http_request_duration":
+                            continue
                         tags = [f"{k}:{v}" for k, v in metric_dict["tags"].items()]
                         pull_collector.incr(metric_pull, metric_dict["value"], tags=tags)
                         logger.info(f" logged to Datadog")

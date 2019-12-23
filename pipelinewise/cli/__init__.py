@@ -12,9 +12,7 @@ __version__ = get_distribution("pipelinewise").version
 user_home = os.path.expanduser("~")
 config_dir = os.path.join(user_home, ".pipelinewise")
 pipelinewise_default_home = os.path.join(user_home, "pipelinewise")
-pipelinewise_home = os.path.abspath(
-    os.environ.setdefault("PIPELINEWISE_HOME", pipelinewise_default_home)
-)
+pipelinewise_home = "/".join(os.environ["VIRTUAL_ENV"].split("/")[:-2])
 venv_dir = os.path.join(pipelinewise_home, ".virtualenvs")
 
 commands = [
@@ -64,6 +62,9 @@ def main():
     parser.add_argument("--log", type=str, default="*", help=log_help)
     parser.add_argument(
         "--debug", default=False, required=False, help=debug_help, action="store_true"
+    )
+    parser.add_argument(
+        "--start_date", type=str, action="store", help="Override the start date of a tap"
     )
 
     args = parser.parse_args()

@@ -1,2 +1,3 @@
 # tap-zendesk==1.4.6
 git+https://github.com/wintersrd/tap-zendesk.git
+# file:///opt/repositories/tap-zendesk

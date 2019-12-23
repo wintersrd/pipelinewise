@@ -1,2 +1,3 @@
 # pipelinewise-target-snowflake==1.0.8
 git+https://github.com/wintersrd/pipelinewise-target-snowflake.git
+# file:///opt/repositories/pipelinewise-target-snowflake

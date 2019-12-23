@@ -12,6 +12,8 @@ SRC_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 # Install pipelinewise venvs in the present working directory
 PIPELINEWISE_HOME=$(pwd)
 VENV_DIR=${PIPELINEWISE_HOME}/.virtualenvs
+CONNECTOR="ALL"
+SKIP_MAIN="NO"
 
 check_license() {
     python3 -m pip install pip-licenses
@@ -29,24 +31,6 @@ check_license() {
         echo "  | $PKG_NAME ($PKG_VERSION) is licensed under $PKG_LICENSE"
         echo "  |"
         echo "  | WARNING. The license of this connector is different than the default PipelineWise license ($MAIN_LICENSE)."
-
-        if [[ $ACCEPT_LICENSES != "YES" ]]; then
-            echo "  | You need to accept the connector's license agreement to proceed."
-            echo "  |"
-            read -r -p "  | Do you accept the [$PKG_LICENSE] license agreement of $PKG_NAME connector? [y/N] " response
-            case "$response" in
-                [yY][eE][sS]|[yY])
-                    ;;
-                *)
-                    echo
-                    echo "EXIT. License agreement not accepted"
-                    exit 1
-                    ;;
-            esac
-        else
-            echo "  | You automatically accepted this license agreement by running this script with --acceptlicenses option."
-        fi
-
     fi
 }
 
@@ -99,8 +83,12 @@ print_installed_connectors() {
 }
 
 # Parse command line arguments
-for arg in "$@"; do
-    case $arg in
+while [ "$1" != "" ]; do
+    case $1 in
+        # Only install a single connector
+        --connector) shift
+            CONNECTOR=$1
+            ;;
         # Auto accept license agreemnets. Useful if PipelineWise installed by an automated script
         --acceptlicenses)
             ACCEPT_LICENSES="YES"
@@ -113,11 +101,15 @@ for arg in "$@"; do
         --notestextras)
             NO_TEST_EXTRAS="YES"
             ;;
+        --skip_main)
+            SKIP_MAIN="YES"
+            ;;
         *)
-            echo "Invalid argument: $arg"
+            echo "Invalid argument: $1"
             exit 1
             ;;
     esac
+    shift
 done
 
 # Welcome message
@@ -125,12 +117,18 @@ cat $SRC_DIR/motd
 
 # Install PipelineWise core components
 cd $SRC_DIR
-make_virtualenv pipelinewise
+if [ "$SKIP_MAIN" = "NO" ]; then
+    make_virtualenv pipelinewise
+fi
 
 # Install Singer connectors
-for i in `ls $SRC_DIR/singer-connectors`; do
-    install_connector $i
-done
+if [ "$CONNECTOR" = "ALL" ]; then
+    for i in `ls $SRC_DIR/singer-connectors`; do
+        install_connector $i
+    done
+else
+    install_connector $CONNECTOR
+fi
 
 # Capture end_time
 end_time=`date +%s`
@@ -144,7 +142,6 @@ if [[ $NO_USAGE != "YES" ]]; then
     echo
     echo "To start CLI:"
     echo " $ source $VENV_DIR/pipelinewise/bin/activate"
-    echo " $ export PIPELINEWISE_HOME=$PIPELINEWISE_HOME"
 
     echo " $ pipelinewise status"
     echo
