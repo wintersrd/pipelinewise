@@ -889,6 +889,19 @@ class PipelineWise(object):
         if not os.path.isfile(tap_state):
             open(tap_state, "w").write("{}")
         tap_state_arg = "--state {}".format(tap_state)
+        # Remove the state and rewrite the config if necessary
+        if self.args.start_date:
+            self.original_start = None
+            config = json.load(open(tap_config))
+            if "start_date" in config.keys():
+                self.original_start = config["start_date"]
+                config["start_date"] = datetime.strptime(self.args.start_date, "%Y-%m-%d")\
+                    .strftime("%Y-%m-%dT00:00:00Z")
+                open(tap_config, 'w').write(json.dumps(config))
+                os.remove(tap_state)
+                open(tap_state, "w").write("{}")
+            else:
+                self.logger.warning("Tried to start from {} but this tap doesn't use start date".format(self.args.start_date))
 
         # Detect if transformation is needed
         has_transformation = False
@@ -943,6 +956,13 @@ class PipelineWise(object):
             os.remove(new_tap_state)
         else:
             self.logger.warning("Not a valid state record")
+
+        # Reset the config back
+        if self.args.start_date:
+            if self.original_start:
+                config["start_date"] = self.original_start
+                os.remove(tap_config)
+                open(tap_config, 'w').write(json.dumps(config))
 
     def run_tap_fastsync(
         self,
