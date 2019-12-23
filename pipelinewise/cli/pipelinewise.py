@@ -551,7 +551,7 @@ class PipelineWise(object):
             self.logger.info("Loading pre defined selection from {}".format(selection_file))
             tap_selection = utils.load_json(selection_file)
             selection = tap_selection["selection"]
-
+            not_selected = []
             streams = schema["streams"]
             for stream_idx, stream in enumerate(streams):
                 tap_stream_id = stream.get("tap_stream_id")
@@ -586,11 +586,13 @@ class PipelineWise(object):
                             "metadata"
                         ]["replication-key"] = tap_stream_sel["replication_key"]
                 else:
-                    self.logger.info("Mark {} tap_stream_id as not selected".format(tap_stream_id))
+                    # self.logger.info("Mark {} tap_stream_id as not selected".format(tap_stream_id))
+                    not_selected.append(tap_stream_id)
                     schema["streams"][stream_idx]["metadata"][stream_table_mdata_idx]["metadata"][
                         "selected"
                     ] = False
-
+        if not_selected:
+            self.logger.info("The following were not selected: {}".format(", ".join(not_selected)))
         return schema
 
     def init(self):

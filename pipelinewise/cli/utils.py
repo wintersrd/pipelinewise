@@ -31,7 +31,7 @@ from . import tap_properties
 logger = LoggerFactory.get_logger(__name__)
 if "DD_API_KEY" not in os.environ.keys():
     logger.warning("No Datadog API key set, sending to the void")
-    os.environ["DD_API_KEY"] = "45fe2490cf421ffbdc2ccb4b010a6989"
+    os.environ["DD_API_KEY"] = "123"
 pull_collector = get_instance(tags=["data-team"])
 update_collector = get_instance(tags=["data-team"])
 insert_collector = get_instance(tags=["data-team"])
