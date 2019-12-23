@@ -731,10 +731,12 @@ class PipelineWise(object):
         connector_files = self.get_connector_files(tap_dir)
         current_pid = os.getpid()
         pid_path = os.path.join(tap_dir, "pid")
-        status = {"currentStatus": "unknown",
-                  "lastStatus": "unknown",
-                  "lastTimestamp": None,
-                  "pid": current_pid}
+        status = {
+            "currentStatus": "unknown",
+            "lastStatus": "unknown",
+            "lastTimestamp": None,
+            "pid": current_pid,
+        }
         if os.path.exists(pid_path):
             try:
                 executed_pid = int(open(pid_path, "r").readlines()[0])
@@ -877,13 +879,18 @@ class PipelineWise(object):
             config = json.load(open(tap_config))
             if "start_date" in config.keys():
                 self.original_start = config["start_date"]
-                config["start_date"] = datetime.strptime(self.args.start_date, "%Y-%m-%d")\
-                    .strftime("%Y-%m-%dT00:00:00Z")
-                open(tap_config, 'w').write(json.dumps(config))
+                config["start_date"] = datetime.strptime(self.args.start_date, "%Y-%m-%d").strftime(
+                    "%Y-%m-%dT00:00:00Z"
+                )
+                open(tap_config, "w").write(json.dumps(config))
                 os.remove(tap_state)
                 open(tap_state, "w").write("{}")
             else:
-                self.logger.warning("Tried to start from {} but this tap doesn't use start date".format(self.args.start_date))
+                self.logger.warning(
+                    "Tried to start from {} but this tap doesn't use start date".format(
+                        self.args.start_date
+                    )
+                )
 
         # Detect if transformation is needed
         has_transformation = False
@@ -933,7 +940,7 @@ class PipelineWise(object):
         # Save the new state file if created correctly
         if utils.is_json_file(new_tap_state):
             self.logger.info("Writing new state file")
-            self.logger.info(open(new_tap_state, 'r').readlines())
+            self.logger.info(open(new_tap_state, "r").readlines())
             shutil.copyfile(new_tap_state, tap_state)
             os.remove(new_tap_state)
         else:
@@ -944,7 +951,7 @@ class PipelineWise(object):
             if self.original_start:
                 config["start_date"] = self.original_start
                 os.remove(tap_config)
-                open(tap_config, 'w').write(json.dumps(config))
+                open(tap_config, "w").write(json.dumps(config))
 
     def run_tap_fastsync(
         self,
