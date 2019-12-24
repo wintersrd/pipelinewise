@@ -1,1 +1,3 @@
-pipelinewise-tap-salesforce==1.0.1
+# tap-zendesk==1.4.6
+git+https://github.com/wintersrd/tap-salesforce.git
+# file:///opt/repositories/tap-salesforce
