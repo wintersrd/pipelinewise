@@ -466,6 +466,7 @@ def run_command(command, log_file=False):
             line = proc.stdout.readline()
             if line:
                 decoded_line = line.decode("utf-8").replace("\n", "").replace(" INFO ", "")
+                decoded_line += "\n"
                 stdout += decoded_line
                 if "key" not in decoded_line:
                     logger.info(decoded_line)
