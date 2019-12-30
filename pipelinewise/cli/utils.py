@@ -466,10 +466,6 @@ def run_command(command, log_file=False):
             line = proc.stdout.readline()
             if line:
                 decoded_line = line.decode("utf-8").replace("\n", "").replace(" INFO ", "")
-                decoded_line += "\n"
-                stdout += decoded_line
-                if "key" not in decoded_line:
-                    logger.info(decoded_line)
                 if "http_request_duration" in decoded_line:
                     continue
                 # Captured extracted count
@@ -503,8 +499,15 @@ def run_command(command, log_file=False):
                         logger.info(f" logged to Datadog")
                     except:
                         pass
-                f.write(decoded_line)
+                skip_lines = ["METRIC", "query", "fetching data"]
+                for word in skip_lines:
+                    if word in decoded_line:
+                        continue
+                if "key" not in decoded_line:
+                    logger.info(decoded_line)
+                f.write(decoded_line + "\n")
                 f.flush()
+                stdout += decoded_line
             if proc.poll() is not None:
                 break
 
