@@ -785,28 +785,55 @@ class PipelineWise(object):
             "Last Sync",
             "Last Sync Result",
         ]
-        tab_body = []
-        pipelines = 0
+        successful_taps = []
+        unsuccessful_taps = []
+        unknown_taps = []
         for target in targets:
             taps = self.get_taps(target["id"])
 
             for tap in taps:
-                tab_body.append(
-                    [
-                        tap.get("id", "<Unknown>"),
-                        tap.get("type", "<Unknown>"),
-                        target.get("id", "<Unknown>"),
-                        target.get("type", "<Unknown>"),
-                        tap.get("enabled", "<Unknown>"),
-                        tap.get("status", {}).get("currentStatus", "<Unknown>"),
-                        tap.get("status", {}).get("lastTimestamp", "<Unknown>"),
-                        tap.get("status", {}).get("lastStatus", "<Unknown>"),
-                    ]
+                current_status = tap.get("status", {}).get("currentStatus", "<Unknown>")
+                tap_staus = [
+                    tap.get("id", "<Unknown>"),
+                    tap.get("type", "<Unknown>"),
+                    target.get("id", "<Unknown>"),
+                    target.get("type", "<Unknown>"),
+                    tap.get("enabled", "<Unknown>"),
+                    tap.get("status", {}).get("currentStatus", "<Unknown>"),
+                    tap.get("status", {}).get("lastTimestamp", "<Unknown>"),
+                    tap.get("status", {}).get("lastStatus", "<Unknown>"),
+                ]
+                if current_status == "success":
+                    successful_taps.append(tap_status)
+                elif current_status == "failed":
+                    unsuccessful_taps.append(tap_status)
+                else:
+                    unknown_taps.append(tap_status)
+        if successful_taps:
+            print(f"{len(successful_taps)} currently succeeding")
+            print(
+                tabulate(
+                    sorted(successful_taps, key=lambda x: x[0]),
+                    headers=tab_headers,
+                    tablefmt="grid",
                 )
-                pipelines += 1
-
-        print(tabulate(tab_body, headers=tab_headers, tablefmt="simple"))
-        print("{} pipeline(s)".format(pipelines))
+            )
+        if unsuccessful_taps:
+            print(f"{len(unsuccessful_taps)} currently failing")
+            print(
+                tabulate(
+                    sorted(unsuccessful_taps, key=lambda x: x[0]),
+                    headers=tab_headers,
+                    tablefmt="grid",
+                )
+            )
+        if unknown_taps:
+            print(f"{len(unknown_taps)} currently in an unknown state")
+            print(
+                tabulate(
+                    sorted(unknown_taps, key=lambda x: x[0]), headers=tab_headers, tablefmt="grid"
+                )
+            )
 
     def reset_tap(self):
         tap_id = self.tap["id"]

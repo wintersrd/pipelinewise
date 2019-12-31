@@ -477,7 +477,6 @@ def run_command(command, log_file=False):
                             continue
                         tags = [f"{k}:{v}" for k, v in metric_dict["tags"].items()]
                         pull_collector.incr(metric_pull, metric_dict["value"], tags=tags)
-                        logger.info(f" logged to Datadog")
                     except:
                         pass
                 # Update vs Insert per row
@@ -496,7 +495,6 @@ def run_command(command, log_file=False):
                             metrics["number of rows updated"],
                             tags=[f"table:{table}", "database:tripactions"],
                         )
-                        logger.info(f" logged to Datadog")
                     except:
                         pass
                 skip_lines = ["METRIC", "query", "fetching data"]
