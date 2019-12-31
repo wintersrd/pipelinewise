@@ -815,7 +815,7 @@ class PipelineWise(object):
                 tabulate(
                     sorted(successful_taps, key=lambda x: x[0]),
                     headers=tab_headers,
-                    tablefmt="grid",
+                    tablefmt="simple",
                 )
             )
             print("\n")
@@ -825,7 +825,7 @@ class PipelineWise(object):
                 tabulate(
                     sorted(unsuccessful_taps, key=lambda x: x[0]),
                     headers=tab_headers,
-                    tablefmt="grid",
+                    tablefmt="simple",
                 )
             )
             print("\n")
@@ -833,7 +833,7 @@ class PipelineWise(object):
             print(f"{len(unknown_taps)} currently in an unknown state\n")
             print(
                 tabulate(
-                    sorted(unknown_taps, key=lambda x: x[0]), headers=tab_headers, tablefmt="grid"
+                    sorted(unknown_taps, key=lambda x: x[0]), headers=tab_headers, tablefmt="simple"
                 )
             )
 
