@@ -793,7 +793,7 @@ class PipelineWise(object):
 
             for tap in taps:
                 current_status = tap.get("status", {}).get("lastStatus", "<Unknown>")
-                tap_staus = [
+                tap_status = [
                     tap.get("id", "<Unknown>"),
                     tap.get("type", "<Unknown>"),
                     target.get("id", "<Unknown>"),
