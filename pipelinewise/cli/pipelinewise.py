@@ -792,7 +792,7 @@ class PipelineWise(object):
             taps = self.get_taps(target["id"])
 
             for tap in taps:
-                current_status = tap.get("status", {}).get("currentStatus", "<Unknown>")
+                current_status = tap.get("status", {}).get("lastStatus", "<Unknown>")
                 tap_staus = [
                     tap.get("id", "<Unknown>"),
                     tap.get("type", "<Unknown>"),
@@ -810,7 +810,7 @@ class PipelineWise(object):
                 else:
                     unknown_taps.append(tap_status)
         if successful_taps:
-            print(f"{len(successful_taps)} currently succeeding")
+            print(f"{len(successful_taps)} currently succeeding\n")
             print(
                 tabulate(
                     sorted(successful_taps, key=lambda x: x[0]),
@@ -818,8 +818,9 @@ class PipelineWise(object):
                     tablefmt="grid",
                 )
             )
+            print("\n")
         if unsuccessful_taps:
-            print(f"{len(unsuccessful_taps)} currently failing")
+            print(f"{len(unsuccessful_taps)} currently failing\n")
             print(
                 tabulate(
                     sorted(unsuccessful_taps, key=lambda x: x[0]),
@@ -827,8 +828,9 @@ class PipelineWise(object):
                     tablefmt="grid",
                 )
             )
+            print("\n")
         if unknown_taps:
-            print(f"{len(unknown_taps)} currently in an unknown state")
+            print(f"{len(unknown_taps)} currently in an unknown state\n")
             print(
                 tabulate(
                     sorted(unknown_taps, key=lambda x: x[0]), headers=tab_headers, tablefmt="grid"
