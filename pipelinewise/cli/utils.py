@@ -463,49 +463,53 @@ def run_command(command, log_file=False):
         f = open("{}".format(log_file_running), "w+")
         stdout = ""
         while True:
-            line = proc.stdout.readline()
-            if line:
-                decoded_line = line.decode("utf-8").replace("\n", "").replace(" INFO ", "")
-                if "http_request_duration" in decoded_line:
-                    continue
-                # Captured extracted count
-                if "record_count" in decoded_line:
-                    metric_dict = decoded_line.split("METRIC: ")[1].strip()
-                    try:
-                        metric_dict = json.loads(metric_dict)
-                        if metric_dict["key"] == "http_request_duration":
-                            continue
-                        tags = [f"{k}:{v}" for k, v in metric_dict["tags"].items()]
-                        pull_collector.incr(metric_pull, metric_dict["value"], tags=tags)
-                    except:
-                        pass
-                # Update vs Insert per row
-                if "SNOWFLAKE - Merge into" in decoded_line:
-                    try:
-                        table, metrics = decoded_line.split("SNOWFLAKE - Merge into ")[1].split("[")
-                        schema, table = table.split(":")[0].split(".")
-                        metrics = json.loads(metrics.replace("'", '"')[:-1])
-                        insert_collector.incr(
-                            metric_insert,
-                            metrics["number of rows inserted"],
-                            tags=[f"table:{table}", "database:tripactions"],
-                        )
-                        update_collector.incr(
-                            metric_update,
-                            metrics["number of rows updated"],
-                            tags=[f"table:{table}", "database:tripactions"],
-                        )
-                    except:
-                        pass
-                skip_lines = ["METRIC", "query", "fetching data"]
-                for word in skip_lines:
-                    if word in decoded_line:
+            try:
+                line = proc.stdout.readline()
+                if line:
+                    decoded_line = line.decode("utf-8").replace("\n", "").replace(" INFO ", "")
+                    if "http_request_duration" in decoded_line:
                         continue
-                if "key" not in decoded_line:
-                    logger.info(decoded_line)
-                f.write(decoded_line + "\n")
-                f.flush()
-                stdout += decoded_line
+                    # Captured extracted count
+                    if "record_count" in decoded_line:
+                        metric_dict = decoded_line.split("METRIC: ")[1].strip()
+                        try:
+                            metric_dict = json.loads(metric_dict)
+                            if metric_dict["key"] == "http_request_duration":
+                                continue
+                            tags = [f"{k}:{v}" for k, v in metric_dict["tags"].items()]
+                            pull_collector.incr(metric_pull, metric_dict["value"], tags=tags)
+                        except:
+                            pass
+                    # Update vs Insert per row
+                    if "SNOWFLAKE - Merge into" in decoded_line:
+                        try:
+                            table, metrics = decoded_line.split("SNOWFLAKE - Merge into ")[1].split("[")
+                            schema, table = table.split(":")[0].split(".")
+                            metrics = json.loads(metrics.replace("'", '"')[:-1])
+                            insert_collector.incr(
+                                metric_insert,
+                                metrics["number of rows inserted"],
+                                tags=[f"table:{table}", "database:tripactions"],
+                            )
+                            update_collector.incr(
+                                metric_update,
+                                metrics["number of rows updated"],
+                                tags=[f"table:{table}", "database:tripactions"],
+                            )
+                        except:
+                            pass
+                    skip_lines = ["METRIC", "query", "fetching data", "Snowflake Connector", "Running SELECT", "SNOWFLAKE"]
+                    to_skip = 0
+                    for word in skip_lines:
+                        if word in decoded_line:
+                            to_skip += 1
+                    if "key" not in decoded_line and to_skip == 0:
+                        logger.info(decoded_line)
+                        f.write(decoded_line + "\n")
+                        f.flush()
+                        stdout += decoded_line
+                except:
+                    pass
             if proc.poll() is not None:
                 break
 
