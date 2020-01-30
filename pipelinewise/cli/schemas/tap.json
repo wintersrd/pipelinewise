@@ -84,7 +84,8 @@
       "tap-s3-csv",
       "tap-snowflake",
       "tap-salesforce",
-      "tap-jira"
+      "tap-jira",
+      "tap-github"
       ] },
     "db_conn":{ "type": "object" },
     "target": { "type": "string" },
