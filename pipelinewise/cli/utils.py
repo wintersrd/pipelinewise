@@ -483,7 +483,9 @@ def run_command(command, log_file=False):
                     # Update vs Insert per row
                     if "SNOWFLAKE - Merge into" in decoded_line:
                         try:
-                            table, metrics = decoded_line.split("SNOWFLAKE - Merge into ")[1].split("[")
+                            table, metrics = decoded_line.split("SNOWFLAKE - Merge into ")[1].split(
+                                "["
+                            )
                             schema, table = table.split(":")[0].split(".")
                             metrics = json.loads(metrics.replace("'", '"')[:-1])
                             insert_collector.incr(
@@ -498,7 +500,14 @@ def run_command(command, log_file=False):
                             )
                         except:
                             pass
-                    skip_lines = ["METRIC", "query", "fetching data", "Snowflake Connector", "Running SELECT", "SNOWFLAKE"]
+                    skip_lines = [
+                        "METRIC",
+                        "query",
+                        "fetching data",
+                        "Snowflake Connector",
+                        "Running SELECT",
+                        "SNOWFLAKE",
+                    ]
                     to_skip = 0
                     for word in skip_lines:
                         if word in decoded_line:
@@ -508,8 +517,8 @@ def run_command(command, log_file=False):
                         f.write(decoded_line + "\n")
                         f.flush()
                         stdout += decoded_line
-                except:
-                    pass
+            except:
+                pass
             if proc.poll() is not None:
                 break
 
