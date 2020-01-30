@@ -152,7 +152,7 @@ def main_impl():
 
     # Start loading tables in parallel in spawning processes by
     # utilising all available CPU cores
-    with multiprocessing.Pool(cpu_cores) as p:
+    with multiprocessing.Pool(cpu_cores * 2) as p:
         table_sync_excs = list(filter(None, p.map(sync_table, args.tables)))
 
     # Refresh information_schema columns cache
