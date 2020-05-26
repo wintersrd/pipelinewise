@@ -57,6 +57,14 @@ def generate_tap_s3_csv_to_table_mappings(tap):
 def get_tap_properties(tap=None):
     return {
         "tap-mysql": {
+            "tap_config_extras": {},
+            "tap_stream_id_pattern": "{{schema_name}}-{{table_name}}",
+            "tap_stream_name_pattern": "{{schema_name}}-{{table_name}}",
+            "tap_catalog_argument": "--properties",
+            "default_replication_method": "LOG_BASED",
+            "default_data_flattening_max_level": 0,
+        },
+        "tap-mssql": {
             "tap_config_extras": {
                 # Generate unique server id's to avoid broken connection
                 # when multiple taps reading from the same mysql server

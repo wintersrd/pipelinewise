@@ -69,14 +69,15 @@
       "required": [ "search_pattern" ]
     }
   },
-  
+
   "type": "object",
-  "properties": {  
+  "properties": {
     "id": { "type": "string" },
     "name": { "type": "string" },
     "type": { "type": "string", "enum": [
       "tap-postgres",
       "tap-mysql",
+      "tap-mssql",
       "tap-oracle",
       "tap-adwords",
       "tap-zendesk",
@@ -93,9 +94,9 @@
     "schemas": {
       "type": "array",
       "items": { "$ref": "#/definitions/schema" }
-    }   
+    }
   },
-  "required":[  
+  "required":[
      "id",
      "name",
      "type",
