@@ -29,7 +29,7 @@ setup(
         "idna==2.8",
         "PyMySQL==0.9.3",
         "psycopg2==2.8.4",
-        "boto3==1.10.44",
+        "boto3==1.10.50",
         "pytz==2018.4",
         "backoff==1.8.0",
         "psutil==5.6.7",
