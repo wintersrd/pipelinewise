@@ -1,2 +1,2 @@
-git+https://github.com/wintersrd/pipelinewise-tap-mysql.git
+git+https://github.com/wintersrd/pipelinewise-tap-mssql.git
 # file:///opt/repositories/pipelinewise-tap-mssql
