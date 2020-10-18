@@ -19,7 +19,7 @@ setup(
     ],
     install_requires=[
         "argparse==1.4.0",
-        "botocore==1.13.50",
+        "botocore==1.14.0",
         "tabulate==0.8.6",
         "PyYAML==5.1.0",
         "jsonschema==3.0.1",
