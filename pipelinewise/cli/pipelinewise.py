@@ -976,6 +976,7 @@ class PipelineWise(object):
             os.remove(new_tap_state)
         else:
             self.logger.warning("Not a valid state record")
+            self.logger.warning(f"State received: {new_tap_state}")
 
         # Reset the config back
         if self.args.start_date:

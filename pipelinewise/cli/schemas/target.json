@@ -69,6 +69,23 @@
         "dbname"
       ]
     },
+    "db_conn_target_mysql": {
+      "type": "object",
+      "properties": {
+        "host": { "type": "string" },
+        "port": { "type": "integer" },
+        "user": { "type": "string" },
+        "password": { "type": "string" },
+        "dbname": { "type": "string" }
+      },
+      "required": [
+        "host",
+        "port",
+        "user",
+        "password",
+        "dbname"
+      ]
+    },
     "db_conn_target_s3_csv": {
       "type": "object",
       "properties": {
@@ -88,20 +105,21 @@
   },
 
   "type": "object",
-  "properties":{  
+  "properties":{
     "id": { "type": "string" },
     "name": { "type": "string" },
-    "type": { "type": "string", "enum": ["target-snowflake", "target-redshift", "target-postgres", "target-s3-csv"] },
+    "type": { "type": "string", "enum": ["target-snowflake", "target-redshift", "target-postgres", "target-s3-csv", "target-mysql"] },
     "db_conn": {
       "anyOf": [
         { "$ref": "#/definitions/db_conn_target_snowflake" },
         { "$ref": "#/definitions/db_conn_target_redshift" },
         { "$ref": "#/definitions/db_conn_target_postgres" },
-        { "$ref": "#/definitions/db_conn_target_s3_csv" }
+        { "$ref": "#/definitions/db_conn_target_s3_csv" },
+        { "$ref": "#/definitions/db_conn_target_mysql"}
       ]
     }
   },
-  "required":[  
+  "required":[
     "id",
     "name",
     "type",
