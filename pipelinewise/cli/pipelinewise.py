@@ -975,8 +975,13 @@ class PipelineWise(object):
             shutil.copyfile(new_tap_state, tap_state)
             os.remove(new_tap_state)
         else:
-            self.logger.warning("Not a valid state record")
-            self.logger.warning(f"State received: {new_tap_state}")
+            self.logger.warning(
+                "Invalid state record, next run will be full to create new state file"
+            )
+            if os.path.exists(new_tap_state):
+                os.remove(new_tap_state)
+            if os.path.exists(tap_state):
+                os.remove(tap_state)
 
         # Reset the config back
         if self.args.start_date:
