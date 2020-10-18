@@ -19,7 +19,7 @@ setup(
     ],
     install_requires=[
         "argparse==1.4.0",
-        "botocore==1.14.0",
+        "botocore==1.13.49",
         "tabulate==0.8.6",
         "PyYAML==5.1.0",
         "jsonschema==3.0.1",
@@ -29,7 +29,7 @@ setup(
         "idna==2.8",
         "PyMySQL==0.9.3",
         "psycopg2==2.8.4",
-        "boto3==1.11.0",
+        "boto3==1.10.49",
         "pytz==2018.4",
         "backoff==1.8.0",
         "psutil==5.6.7",
