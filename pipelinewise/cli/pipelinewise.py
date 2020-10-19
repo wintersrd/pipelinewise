@@ -974,6 +974,16 @@ class PipelineWise(object):
             self.logger.info(open(new_tap_state, "r").readlines())
             shutil.copyfile(new_tap_state, tap_state)
             os.remove(new_tap_state)
+        elif os.path.exists(new_tap_state) and utils.is_json_file(
+            open(new_tap_state, "r").readlines()[-1]
+        ):
+            self.logger.warning("State record is corrupt but last line appears to be valid")
+            corrected_state = new_tap_state + "_2"
+            with open(corrected_state, "r") as state:
+                open(state, "r").write(open(new_tap_state, "r").readlines()[-1])
+            shutil.copyfile(corrected_state, tap_state)
+            os.remove(corrected_state)
+            os.remove(new_tap_state)
         else:
             self.logger.warning(
                 "Invalid state record, next run will be full to create new state file"
